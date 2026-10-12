@@ -35,9 +35,10 @@ function doPost(e) {
   }
 }
 
-// Lets you open the Web app URL in a browser to check it's deployed.
+// Open the Web app URL in a browser to check it's deployed and see who the
+// live version emails. If sendsTo is out of date, deploy a New version.
 function doGet() {
-  return json({ ok: true, message: "Inspection email sender is running." });
+  return json({ ok: true, message: "Inspection email sender is running.", sendsTo: REPORT_TO });
 }
 
 function json(obj) {
