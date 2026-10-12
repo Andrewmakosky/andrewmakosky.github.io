@@ -69,7 +69,7 @@
       </section>
 
       <div class="quick">
-        <button type="button" class="btn ghost" id="allOkBtn">Mark remaining as OK</button>
+        <button type="button" class="btn ghost" id="allOkBtn">Mark remaining as Pass</button>
       </div>
 
       <div id="checklist"></div>
@@ -83,10 +83,13 @@
             <label><input type="radio" name="safe" value="No"><span>No — do not use</span></label>
           </div>
         </fieldset>
-        <label class="field">
-          <span>Other notes / damage</span>
+        <div class="field">
+          <label for="notes"><span class="label">Other notes / damage</span></label>
           <textarea id="notes" name="notes" rows="3"></textarea>
-        </label>
+          <div class="photos" data-photos="notes"></div>
+          <button type="button" class="photo-btn wide" data-add-photo="notes">📷 Add photo</button>
+        </div>
+        <div class="policy" id="policy"></div>
         <label class="check">
           <input type="checkbox" id="certify" required>
           <span>I inspected this vehicle and the report is accurate.</span>
@@ -100,22 +103,30 @@
         <button type="button" class="btn ghost danger" id="resetBtn">Clear form</button>
       </div>
     </form>
+    <input type="file" id="photoInput" accept="image/*" multiple hidden>
   </main>
 
   <main id="doneView" hidden>
     <section class="card done">
-      <div class="done-icon" aria-hidden="true">✓</div>
+      <div class="done-icon" aria-hidden="true" id="doneIcon">✓</div>
       <h2 id="doneTitle">Report sent</h2>
       <p id="doneMsg"></p>
+      <div class="recipient" id="recipientBox" hidden>
+        <span id="recipientText"></span>
+        <button type="button" class="copy-btn" id="copyBtn">Copy</button>
+      </div>
       <div class="actions">
-        <button type="button" class="btn ghost" id="resendBtn" hidden>Open email again</button>
-        <button type="button" class="btn ghost" id="shareBtn" hidden>Share report another way</button>
-        <button type="button" class="btn primary" id="newBtn">Start a new checklist</button>
+        <button type="button" class="btn primary" id="sharePdfBtn" hidden>Email PDF report</button>
+        <button type="button" class="btn ghost" id="downloadBtn">Save PDF to phone</button>
+        <button type="button" class="btn ghost" id="mailtoBtn" hidden>Email without PDF</button>
+        <button type="button" class="btn ghost" id="newBtn">Start a new checklist</button>
       </div>
     </section>
   </main>
 
   <script src="config.js"></script>
+  <script src="vendor/jspdf.umd.min.js"></script>
+  <script src="report.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
