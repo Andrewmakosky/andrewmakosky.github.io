@@ -469,7 +469,7 @@
 
   // ---------- sending ----------
   function mailtoUrl(r, body) {
-    return "mailto:" + encodeURIComponent(CFG.reportEmail || "").replace(/%2C/g, ",") +
+    return "mailto:" + encodeURIComponent((CFG.reportEmail || "").replace(/\s+/g, "")).replace(/%2C/g, ",").replace(/%40/g, "@") +
       "?subject=" + encodeURIComponent(r.subject) +
       "&body=" + encodeURIComponent(body);
   }
@@ -526,7 +526,7 @@
         (sharable
           ? "Tap Email PDF report, pick your email app, and send it to:"
           : "Save the PDF, then email it as an attachment to:");
-      $("recipientText").textContent = to;
+      $("recipientText").textContent = to.split(",").map(function (a) { return a.trim(); }).join("\n");
       $("recipientBox").hidden = !to;
       $("sharePdfBtn").hidden = !sharable;
       $("mailtoBtn").hidden = false;

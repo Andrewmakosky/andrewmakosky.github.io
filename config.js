@@ -8,7 +8,7 @@ window.APP_CONFIG = {
   companyName: "Creative Snow by Cowbay",
 
   // Where completed reports are emailed. Separate multiple addresses with commas.
-  reportEmail: "andrew.makosky@cowbaycontracting.com",
+  reportEmail: "andrew.makosky@cowbaycontracting.com, patricia.vallejo@cowbaycontracting.com, mark.dalonzo@cowbaycontracting.com, brian.dalonzo@cowbaycontracting.com, ddalonzo@cowbaycontracting.com",
 
   // OPTIONAL — send the PDF report automatically, with no email app needed.
   // Follow "Automatic emailing" in README.md to set up the free Google
