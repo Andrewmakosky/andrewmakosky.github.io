@@ -30,11 +30,12 @@
   <main id="formView">
     <form id="checkForm" novalidate>
       <section class="card">
-        <h2>Vehicle &amp; driver</h2>
-        <label class="field">
-          <span>Your name</span>
-          <input id="driver" name="driver" autocomplete="name" required>
-        </label>
+        <h2>Vehicle &amp; operators</h2>
+        <div class="field">
+          <span class="label">Operators for this vehicle</span>
+          <div id="operators"></div>
+          <button type="button" class="btn ghost small" id="addOperatorBtn">+ Add another operator</button>
+        </div>
         <div class="row">
           <label class="field">
             <span>Unit / vehicle #</span>
@@ -90,6 +91,10 @@
           <button type="button" class="photo-btn wide" data-add-photo="notes">📷 Add photo</button>
         </div>
         <div class="policy" id="policy"></div>
+        <label class="field">
+          <span>Name of inspector</span>
+          <input id="inspector" name="inspector" autocomplete="name" required>
+        </label>
         <label class="check">
           <input type="checkbox" id="certify" required>
           <span>I inspected this vehicle and the report is accurate.</span>

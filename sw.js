@@ -1,6 +1,6 @@
 // Offline support: serve the app from cache, update in the background.
 // Bump VERSION when you change any file so phones pick up the new copy.
-var VERSION = "v4";
+var VERSION = "v5";
 var CACHE = "checklist-" + VERSION;
 var FILES = [
   "./",

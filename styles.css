@@ -189,3 +189,15 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--focus); out
   padding: 4px 12px; min-height: 36px; cursor: pointer;
 }
 .busy { opacity: .6; pointer-events: none; }
+
+/* Operators */
+.operator { padding: 12px; margin: 0 0 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+.operator input { background: var(--card); }
+.operator-row { display: flex; gap: 8px; align-items: center; }
+.operator-row input { flex: 1; min-width: 0; }
+.op-remove {
+  flex: none; width: 48px; height: 48px; border-radius: 10px;
+  border: 2px solid var(--line); background: var(--card); color: var(--fail);
+  font-size: 24px; line-height: 1; cursor: pointer;
+}
+.btn.small { min-height: 46px; padding: 8px 12px; font-size: 16px; }
