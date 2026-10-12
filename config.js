@@ -1,96 +1,137 @@
 // ============================================================
 //  Creative Snow by Cowbay — checklist settings
 //  Edit this file to change where reports go and what gets checked.
+//  After editing, bump VERSION in sw.js so phones pick up the change.
 // ============================================================
 window.APP_CONFIG = {
-  // Company / app name shown at the top of the app and in reports.
+  // Name shown at the top of the app and on the PDF report.
   companyName: "Creative Snow by Cowbay",
 
   // Where completed reports are emailed. Separate multiple addresses with commas.
   reportEmail: "andrew.makosky@cowbaycontracting.com",
 
-  // OPTIONAL — send reports automatically, with no email app needed.
-  // 1. Go to https://web3forms.com, enter the address that should receive reports,
-  //    and copy the "Access Key" they email you.
-  // 2. Paste it between the quotes below.
-  // Reports then go to the address you registered with Web3Forms.
-  // Leave blank to have the app open the phone's email app with the report filled in.
-  web3formsAccessKey: "",
+  // OPTIONAL — send the PDF report automatically, with no email app needed.
+  // Follow "Automatic emailing" in README.md to set up the free Google
+  // Apps Script sender, then paste its Web app URL between the quotes.
+  // Leave blank and drivers send the PDF from their phone's email app instead.
+  emailServiceUrl: "",
 
   // Vehicle / equipment types the driver picks from.
   vehicleTypes: [
     "Plow truck",
     "Pickup w/ plow",
+    "Salt / sand spreader truck",
     "Loader",
     "Skid steer",
     "Sidewalk machine / tractor",
-    "Salt / sand spreader truck",
-    "Snow blower",
     "Other",
   ],
 
   // The checklist. Add, remove or rename sections and items freely.
   checklist: [
     {
-      section: "Walk-around",
+      section: "Paperwork",
       items: [
-        "Tires / tracks — pressure, tread, damage",
-        "Wheel nuts / lugs secure",
-        "No fluid leaks under vehicle",
-        "Body / cab damage",
-        "Mirrors clean and adjusted",
-        "Windshield free of cracks",
+        "Registration in vehicle",
+        "Insurance card in vehicle",
+        "State inspection current",
       ],
     },
     {
-      section: "Fluids",
+      section: "Engine & Fluids",
       items: [
-        "Engine oil",
-        "Coolant",
-        "Hydraulic fluid",
-        "Washer fluid (winter mix)",
-        "Fuel / DEF level adequate",
+        "Starts and runs with no warning lights",
+        "No major leaks (engine, transmission, hydraulic, fuel)",
+        "Fluids checked: oil, coolant, transmission, power steering, brake",
+        "Battery secure, terminals clean",
+        "Belts, hoses, and exhaust in good shape",
       ],
     },
     {
-      section: "Lights & safety",
+      section: "Tires & Brakes",
       items: [
-        "Headlights (high & low)",
-        "Plow lights",
-        "Brake / tail lights",
-        "Turn signals & hazards",
-        "Beacon / strobe lights",
-        "Backup alarm",
-        "Horn",
-        "Wipers & defrost / heater",
-        "Seat belt",
-        "Fire extinguisher",
-        "First aid kit",
+        "Tires have good tread, correct pressure, no damage",
+        "Wheels and lug nuts secure",
+        "Service and parking brakes work",
+        "Brake lines look good",
       ],
     },
     {
-      section: "Cab & drive",
+      section: "Lights & Electrical",
       items: [
-        "Brakes / parking brake",
-        "Steering",
-        "Gauges & warning lights normal",
-        "4WD engages",
-        "Battery / starts normally",
+        "Headlights (high and low), tail, brake, reverse, plate lights",
+        "Turn signals and hazards",
+        "Plow lights and amber strobes",
+        "Backup alarm and horn",
+        "Wipers and washer fluid",
+        "Heater and defroster",
       ],
     },
     {
-      section: "Plow & attachments",
+      section: "Plow",
       items: [
-        "Plow mount / pins secure",
-        "Cutting edge / blade wear",
-        "Plow hydraulics & hoses",
-        "Plow controls (up/down/angle)",
-        "Trip springs / shoes",
-        "Spreader / salter operating",
-        "Spinner & auger / conveyor",
-        "Chains (if equipped)",
-        "Shovel, ice scraper, salt bucket on board",
+        "Mounted securely; frame and welds not cracked",
+        "Cutting edge and shoes in good condition",
+        "Hydraulic hoses and fittings tight, no leaks; fluid level OK",
+        "Raises, lowers, and angles left/right",
+        "Controller and wiring work",
+        "Plow markers installed",
       ],
     },
+    {
+      section: "Salt Spreader",
+      items: [
+        "Mounted securely; hopper solid, no missing parts or guards",
+        "Spinner and conveyor/auger work",
+        "Controller, wiring, and flow gate work",
+        "Hydraulic hoses free of leaks",
+        "Spreader lights work",
+      ],
+    },
+    {
+      section: "Cab & Visibility",
+      items: [
+        "Windshield free of major cracks",
+        "Mirrors secure and adjusted; rear view clear",
+        "Seat belts, seat, doors, and locks work",
+        "No loose items in cab",
+      ],
+    },
+    {
+      section: "Safety Equipment On Board",
+      items: [
+        "Fire extinguisher (charged and mounted)",
+        "Safety vest",
+        "Ice scraper / snow brush",
+      ],
+    },
+    {
+      section: "Cow Bay Requirements",
+      items: [
+        "Cow Bay signage and site ID displayed",
+        "2026-2027 inspection decal installed",
+        "GPS installed, working, and confirmed with dispatch",
+        "Driver and emergency contact info submitted",
+        "Vehicle assigned to a site/route",
+        "Driver has supervisor and dispatch contacts",
+        "Driver knows sign-in/out, dispatch, and accident reporting",
+      ],
+    },
+    {
+      section: "Road & Function Test",
+      items: [
+        "Road test: brakes and steering",
+        "Plow: raise, lower, angle",
+        "Spreader running",
+        "Warning lights and backup alarm",
+        "GPS signal verified",
+      ],
+    },
+  ],
+
+  // Shown above the sign-off in the app and printed on every report.
+  policy: [
+    "No vehicle or equipment will be dispatched unless it has passed this inspection and has a current Cow Bay decal. Any vehicle with an unsafe condition, broken required equipment, or missing GPS or ID may be pulled from service until it's fixed.",
+    "A Cow Bay decal will be applied to certify that the vehicle is approved for use. The decal does not guarantee approval for the full season. If the vehicle's condition changes, the decal can be revoked.",
   ],
 };

@@ -34,6 +34,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
@@ -74,7 +75,7 @@ main { max-width: 640px; margin: 0 auto; padding: 12px 16px 32px; }
 .card h2 { margin: 0 0 12px; font-size: 18px; }
 
 .field { display: block; margin: 0 0 12px; border: 0; padding: 0; min-width: 0; }
-.field > span, .field > legend { display: block; font-size: 14px; color: var(--muted); margin-bottom: 4px; padding: 0; }
+.field > span, .field > legend, .field .label { display: block; font-size: 14px; color: var(--muted); margin-bottom: 4px; padding: 0; }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 @media (max-width: 360px) { .row { grid-template-columns: 1fr; } }
 
@@ -96,7 +97,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--focus); out
 /* Checklist items */
 .item { padding: 12px 0; border-top: 1px solid var(--line); }
 .item:first-of-type { border-top: 0; padding-top: 0; }
-.item-name { font-weight: 600; margin-bottom: 8px; }
+.item-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.item-name { font-weight: 600; padding-top: 6px; }
 .item.missing .item-name { color: var(--fail); }
 .item-note { margin-top: 8px; }
 .item-note[hidden] { display: none; }
@@ -113,7 +115,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--focus); out
   background: var(--card);
 }
 .seg input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 2px; }
-.seg input[value="OK"]:checked + span,
+.seg input[value="Pass"]:checked + span,
 .seg input[value="Yes"]:checked + span { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
 .seg input[value="Fail"]:checked + span,
 .seg input[value="No"]:checked + span { background: var(--fail-bg); border-color: var(--fail); color: var(--fail); }
@@ -148,3 +150,42 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--focus); out
 }
 .done.warn .done-icon { background: var(--fail-bg); color: var(--fail); }
 .done p { color: var(--muted); margin: 0 0 20px; }
+
+/* Photos */
+.photo-btn {
+  flex: none;
+  font: inherit; font-size: 15px; font-weight: 600; color: var(--text);
+  background: var(--card); border: 2px solid var(--line); border-radius: 10px;
+  min-height: 40px; padding: 6px 10px; cursor: pointer; white-space: nowrap;
+}
+.photo-btn.wide { margin-top: 8px; width: 100%; min-height: 48px; }
+.photo-btn .count { color: var(--muted); }
+.photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+.photos:not(:empty) { margin-top: 8px; }
+.photo { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: var(--na-bg); }
+.photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo button {
+  position: absolute; top: 4px; right: 4px;
+  width: 30px; height: 30px; border-radius: 50%; border: 0;
+  background: rgba(0,0,0,.65); color: #fff; font-size: 18px; line-height: 30px; cursor: pointer; padding: 0;
+}
+
+.policy {
+  font-size: 14px; color: var(--muted);
+  background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 12px; margin: 4px 0 14px;
+}
+.policy p { margin: 0 0 8px; }
+.policy p:last-child { margin: 0; }
+
+.recipient {
+  display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 12px; margin: 0 0 16px; font-weight: 600; font-size: 15px; overflow-wrap: anywhere;
+}
+.copy-btn {
+  font: inherit; font-size: 14px; font-weight: 700; color: var(--text);
+  background: var(--card); border: 2px solid var(--line); border-radius: 8px;
+  padding: 4px 12px; min-height: 36px; cursor: pointer;
+}
+.busy { opacity: .6; pointer-events: none; }

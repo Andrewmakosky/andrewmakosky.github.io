@@ -1,27 +1,69 @@
 # Creative Snow by Cowbay — Vehicle Checklist
 
-A mobile app for pre-trip vehicle and equipment inspections. Drivers fill out the checklist on their phone, and when they submit it, an inspection report is emailed to the office.
+A mobile app for pre-season and pre-trip vehicle and equipment inspections. Drivers fill out the checklist on their phone and attach photos. When they submit, a **PDF inspection report** is created and emailed to the office.
 
 It's a web app hosted on GitHub Pages, so there's nothing to download from an app store.
 
 **Live at:** https://andrewmakosky.github.io/
 
-## Setup (one time)
+## How it works for drivers
 
-Edit **`config.js`**:
+1. They enter their name (remembered for next time), unit #, type, hours/odometer, fuel level and site/route.
+2. They mark each item **Pass / Fail / N/A**. A **Fail** requires a short note.
+3. The 📷 button on any item adds photos (camera or photo library). There's also a photo button under **Other notes / damage**.
+4. **Mark remaining as Pass** speeds up a clean inspection.
+5. They answer "Safe to operate?", read the Cow Bay policy, confirm the inspection, and tap **Submit report**.
 
-1. **`reportEmail`**: the address that receives reports.
-2. **`companyName`**: the name shown in the app and in the reports.
-3. **`checklist`** / **`vehicleTypes`**: add, remove or rename items.
+Progress and photos are saved on the phone as they go, so closing the app doesn't lose anything.
 
-### Sending reports automatically (recommended)
+### The PDF report
 
-By default, submitting a report opens the phone's email app with the report filled in, and the driver presses **Send**. To skip that step:
+- A status badge: **ALL PASS**, **N FAILED ITEMS** or **OUT OF SERVICE**
+- Vehicle, driver, date, odometer, fuel and site details
+- A red **Problems found** box listing every failed item with its note
+- The full checklist with Pass/Fail/N/A for every item, and photos under the item they belong to
+- Notes, the Cow Bay policy text, and the driver's certification
 
-1. Go to https://web3forms.com, enter the address that should receive reports, and get an Access Key (free).
-2. Paste the key into `web3formsAccessKey` in `config.js`.
+The email subject shows the same status, e.g. `[1 FAILED ITEM] Unit P-12 inspection - Sam - 10/12/2026`.
 
-Reports are then sent automatically when the driver taps **Submit**. If sending fails (for example, there's no signal), the app falls back to opening the email app so the report isn't lost.
+## How reports get emailed
+
+There are two modes:
+
+**Without setup (default):** after Submit, the driver taps **Email PDF report**, picks their email app (Mail, Gmail, Outlook…), and sends it to the address shown on screen. The PDF is already attached. There's also **Save PDF to phone**, plus **Email without PDF** for a text-only backup.
+
+**With automatic emailing (recommended):** the report and PDF are emailed straight to the office as soon as the driver taps Submit. The driver doesn't need to do anything else. If the phone has no signal, the app falls back to the manual buttons so the report is never lost.
+
+### Automatic emailing setup (one time, about 10 minutes, free)
+
+This uses a free Google Apps Script that sends the email from a Google account. Any Gmail or Google Workspace account works. Reports come **from** that account and go **to** the address in `email-sender.gs`.
+
+1. Sign in to the Google account that should send the reports, and go to **https://script.google.com**.
+2. Click **New project**. Name it "Inspection Email Sender" (click "Untitled project" at the top).
+3. Delete the sample code, then paste in everything from [`email-sender.gs`](email-sender.gs) in this repo. Check that `REPORT_TO` is the address that should receive reports. Click 💾 **Save**.
+4. Click **Deploy**, then **New deployment**.
+   - Click the ⚙️ next to "Select type" and choose **Web app**.
+   - **Execute as:** *Me*
+   - **Who has access:** *Anyone*. This is required so drivers' phones can reach it; the script can only email the `REPORT_TO` address.
+   - Click **Deploy**.
+5. Google asks you to **Authorize access**. Pick your account. If you see "Google hasn't verified this app", click **Advanced**, then **Go to Inspection Email Sender**, then **Allow**. This is expected, because it's your own script.
+6. Copy the **Web app URL**. It looks like `https://script.google.com/macros/s/…/exec`.
+7. Paste it into `emailServiceUrl` in `config.js` (or send it to whoever maintains the app).
+
+Limits: free Gmail accounts can send about 100 emails a day, and Google Workspace accounts about 1,500.
+
+If you later change `email-sender.gs`, use **Deploy**, then **Manage deployments**, then ✏️, then **Version: New version**, then **Deploy**. That keeps the same URL.
+
+## Settings — `config.js`
+
+- **`companyName`**: the name shown in the app and on the PDF
+- **`reportEmail`**: where reports go
+- **`emailServiceUrl`**: the Apps Script URL for automatic emailing (blank = manual)
+- **`vehicleTypes`**: the vehicle types drivers pick from
+- **`checklist`**: sections and items. Add, remove or rename freely.
+- **`policy`**: the paragraphs shown before sign-off and printed on the report
+
+After changing any file, bump `VERSION` in `sw.js` (e.g. `v4` to `v5`) so phones pick up the new version.
 
 ## Installing on a phone
 
@@ -32,16 +74,10 @@ Open the link on the phone, then:
 
 The app gets its own icon and opens full screen. After the first load it also works offline.
 
-## How it works for drivers
+## Files
 
-- They enter their name (remembered for next time), unit #, type, hours/odometer and fuel.
-- They mark each item **OK / Problem / N/A**. Choosing **Problem** requires a short note.
-- **Mark remaining as OK** speeds up a clean inspection.
-- They answer "Safe to operate?" and confirm the inspection.
-- Progress is saved as they go, so closing the app doesn't lose anything.
-
-The email subject flags the status: `[ALL OK]`, `[2 ISSUES]` or `[OUT OF SERVICE]`. Problems are listed at the top of the report.
-
-## Updating
-
-After changing any file, bump `VERSION` in `sw.js` (e.g. `v1` to `v2`) so phones pick up the new version.
+- `index.html`, `styles.css`, `app.js`: the app
+- `report.js`: builds the PDF (uses [jsPDF](https://github.com/parallax/jsPDF) 2.5.2, MIT licence, in `vendor/`)
+- `config.js`: settings and checklist
+- `email-sender.gs`: the Google Apps Script for automatic emailing
+- `sw.js`, `manifest.webmanifest`, `icons/`: offline support and home-screen install
