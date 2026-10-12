@@ -3,7 +3,7 @@
 
   var CFG = window.APP_CONFIG || {};
   var DRAFT_KEY = "checklist-draft-v2";
-  var DRIVER_KEY = "checklist-driver";
+  var INSPECTOR_KEY = "checklist-inspector";
   var PHOTO_MAX = 1280;      // longest side, px
   var PHOTO_QUALITY = 0.7;   // JPEG quality
 
@@ -119,6 +119,52 @@
     return el ? el.value : "";
   }
 
+  // ---------- operators ----------
+  function newOpId() { return "op" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
+
+  function addOperator(id, name) {
+    id = id || newOpId();
+    var row = document.createElement("div");
+    row.className = "operator";
+    row.dataset.op = id;
+    row.innerHTML =
+      '<div class="operator-row">' +
+        '<input name="op_' + id + '" placeholder="Operator name" aria-label="Operator name" autocomplete="off">' +
+        '<button type="button" class="op-remove" aria-label="Remove operator">×</button>' +
+      '</div>' +
+      '<div class="photos" data-photos="' + id + '"></div>' +
+      '<button type="button" class="photo-btn wide" data-add-photo="' + id + '">📷 Add driver\'s license photo<span class="count"></span></button>';
+    row.querySelector("input").value = name || "";
+    row.querySelector(".op-remove").addEventListener("click", function () {
+      var hasData = row.querySelector("input").value.trim() || (photos[id] && photos[id].length);
+      if (hasData && !confirm("Remove this operator and their license photo?")) return;
+      row.remove();
+      if (photos[id]) { delete photos[id]; savePhotos(); }
+      updateOperatorButtons();
+      saveDraft();
+    });
+    $("operators").appendChild(row);
+    renderPhotos(id);
+    updateOperatorButtons();
+    return row;
+  }
+
+  function updateOperatorButtons() {
+    var rows = $("operators").querySelectorAll(".operator");
+    rows.forEach(function (r) { r.querySelector(".op-remove").hidden = rows.length < 2; });
+  }
+
+  function getOperators() {
+    return Array.prototype.map.call($("operators").querySelectorAll(".operator"), function (r) {
+      return { id: r.dataset.op, name: r.querySelector("input").value.trim() };
+    });
+  }
+
+  function resetOperators(list) {
+    $("operators").innerHTML = "";
+    (list && list.length ? list : [{}]).forEach(function (o) { addOperator(o.id, o.name); });
+  }
+
   // ---------- photos ----------
   function renderPhotos(key) {
     var box = form.querySelector('[data-photos="' + key + '"]');
@@ -146,7 +192,8 @@
       box.appendChild(cell);
     });
     var btn = form.querySelector('[data-add-photo="' + key + '"] .count');
-    if (btn) btn.textContent = photos[key] && photos[key].length ? " " + photos[key].length : "";
+    var n = photos[key] ? photos[key].length : 0;
+    if (btn) btn.textContent = !n ? "" : btn.closest(".wide") ? " (" + n + ")" : " " + n;
   }
 
   function renderAllPhotos() {
@@ -213,17 +260,19 @@
     var data = {};
     Array.prototype.forEach.call(form.elements, function (el) {
       var key = el.name || el.id;
-      if (!key || el.type === "file") return;
+      if (!key || el.type === "file" || key.indexOf("op_") === 0) return;
       if (el.type === "radio") { if (el.checked) data[key] = el.value; }
       else if (el.type === "checkbox") data[key] = el.checked;
       else data[key] = el.value;
     });
+    data.operators = getOperators();
     store(DRAFT_KEY, data);
-    if ($("driver").value.trim()) store(DRIVER_KEY, $("driver").value.trim());
+    if ($("inspector").value.trim()) store(INSPECTOR_KEY, $("inspector").value.trim());
   }
 
   function restoreDraft() {
     var data = load(DRAFT_KEY);
+    resetOperators(data && data.operators);
     if (data) {
       Array.prototype.forEach.call(form.elements, function (el) {
         var key = el.name || el.id;
@@ -233,7 +282,7 @@
         else el.value = data[key];
       });
     }
-    if (!$("driver").value) $("driver").value = load(DRIVER_KEY) || "";
+    if (!$("inspector").value) $("inspector").value = load(INSPECTOR_KEY) || "";
   }
 
   // ---------- validation ----------
@@ -251,11 +300,19 @@
     $("formError").hidden = true;
     form.querySelectorAll(".invalid").forEach(function (el) { el.classList.remove("invalid"); });
 
-    var req = [$("driver"), $("unit"), $("vehicleType")];
+    var opInputs = $("operators").querySelectorAll("input");
+    var named = Array.prototype.filter.call(opInputs, function (i) { return i.value.trim(); });
+    if (!named.length) {
+      opInputs[0].classList.add("invalid");
+      showError("Please enter at least one operator for this vehicle.", opInputs[0]);
+      return false;
+    }
+
+    var req = [$("unit"), $("vehicleType")];
     for (var k = 0; k < req.length; k++) {
       if (!req[k].value.trim()) {
         req[k].classList.add("invalid");
-        showError("Please fill in name, unit # and vehicle type.", req[k]);
+        showError("Please fill in unit # and vehicle type.", req[k]);
         return false;
       }
     }
@@ -288,6 +345,11 @@
       showError("Please answer whether the vehicle is safe to operate.", form.querySelector('input[name="safe"]').closest(".field"));
       return false;
     }
+    if (!$("inspector").value.trim()) {
+      $("inspector").classList.add("invalid");
+      showError("Please enter the name of the inspector.", $("inspector"));
+      return false;
+    }
     if (!$("certify").checked) {
       showError("Please tick the box confirming the inspection.", $("certify"));
       return false;
@@ -308,7 +370,9 @@
     var fails = items.filter(function (it) { return valueOf(it.id) === "Fail"; });
     var safe = valueOf("safe");
     var unit = $("unit").value.trim();
-    var driver = $("driver").value.trim();
+    var inspector = $("inspector").value.trim();
+    var operators = getOperators().filter(function (o) { return o.name; });
+    var operatorNames = operators.map(function (o) { return o.name; }).join(", ");
     var company = CFG.companyName || "Fleet";
     var kind = safe === "No" ? "oos" : fails.length ? "issues" : "ok";
     var flag = kind === "oos" ? "OUT OF SERVICE" : kind === "issues" ? fails.length + " FAILED ITEM" + (fails.length > 1 ? "S" : "") : "ALL PASS";
@@ -316,7 +380,8 @@
     var details = [
       ["Unit / vehicle #", unit],
       ["Type", $("vehicleType").value],
-      ["Driver", driver],
+      ["Operator" + (operators.length > 1 ? "s" : ""), operatorNames],
+      ["Inspector", inspector],
       ["Date", when],
       ["Odometer / hours", $("odometer").value.trim()],
       ["Fuel level", $("fuel").value],
@@ -359,10 +424,12 @@
       L.push("  " + $("notes").value.trim());
     }
     var photoCount = Object.keys(photos).reduce(function (n, k) { return n + photos[k].length; }, 0);
+    var licenseCount = operators.reduce(function (n, o) { return n + (photos[o.id] || []).length; }, 0);
+    if (operators.length) L.push("License photos: " + licenseCount + " (in PDF)");
     var safeUnit = unit.replace(/[^A-Za-z0-9-]+/g, "-").replace(/^-+|-+$/g, "") || "vehicle";
 
     return {
-      subject: "[" + flag + "] Unit " + unit + " inspection - " + driver + " - " + now.toLocaleDateString(),
+      subject: "[" + flag + "] Unit " + unit + " inspection - " + inspector + " - " + now.toLocaleDateString(),
       summary: L.join("\n"),
       photoCount: photoCount,
       outOfService: kind !== "ok",
@@ -376,7 +443,8 @@
         notes: $("notes").value.trim(),
         notesPhotos: photos.notes || [],
         policy: CFG.policy || [],
-        driver: driver,
+        inspector: inspector,
+        operators: operators.map(function (o) { return { name: o.name, photos: photos[o.id] || [] }; }),
         dateStr: when,
         footer: company + "  |  Unit " + unit + "  |  " + when,
         filename: "Inspection_Unit-" + safeUnit + "_" + isoDate + ".pdf",
@@ -395,7 +463,7 @@
       });
     });
     L.push("");
-    L.push("Certified accurate by " + r.pdfData.driver + ".");
+    L.push("Certified accurate by " + r.pdfData.inspector + ".");
     return L.join("\n");
   }
 
@@ -509,9 +577,9 @@
   }
 
   function clearForm(keepView) {
-    var driver = $("driver").value;
+    var inspector = $("inspector").value;
     form.reset();
-    $("driver").value = driver || load(DRIVER_KEY) || "";
+    $("inspector").value = inspector || load(INSPECTOR_KEY) || "";
     form.querySelectorAll(".missing, .invalid").forEach(function (el) {
       el.classList.remove("missing");
       el.classList.remove("invalid");
@@ -520,6 +588,7 @@
     store(DRAFT_KEY, null);
     photos = {};
     savePhotos();
+    resetOperators();
     renderAllPhotos();
     refresh();
     if (!keepView) window.scrollTo(0, 0);
@@ -551,6 +620,12 @@
   });
   $("photoInput").addEventListener("change", function () {
     if (photoTarget && this.files.length) addPhotos(photoTarget, this.files);
+  });
+
+  $("addOperatorBtn").addEventListener("click", function () {
+    var row = addOperator();
+    row.querySelector("input").focus();
+    saveDraft();
   });
 
   $("allOkBtn").addEventListener("click", function () {

@@ -80,17 +80,22 @@
     // ---- details grid ----
     var colW = CW / 2;
     for (var i = 0; i < d.details.length; i += 2) {
-      ensure(34);
-      for (var k = 0; k < 2 && i + k < d.details.length; k++) {
+      font("bold", 12);
+      var cells = d.details.slice(i, i + 2).map(function (c) {
+        return { label: c[0], lines: lines(c[1] || "-", colW - 12).slice(0, 3) };
+      });
+      var rowH = 19 + Math.max.apply(null, cells.map(function (c) { return c.lines.length; })) * lineH(12);
+      ensure(rowH);
+      cells.forEach(function (c, k) {
         var x = M + k * colW;
         font("normal", 9);
         color(MUTED);
-        doc.text(clean(d.details[i + k][0]).toUpperCase(), x, y);
+        doc.text(clean(c.label).toUpperCase(), x, y);
         font("bold", 12);
         color(INK);
-        doc.text(lines(d.details[i + k][1] || "-", colW - 12)[0], x, y + 15);
-      }
-      y += 34;
+        doc.text(c.lines, x, y + 15);
+      });
+      y += rowH;
     }
 
     // ---- problems summary ----
@@ -197,6 +202,35 @@
       y += 4;
     });
 
+    // ---- operator licenses ----
+    var ops = d.operators || [];
+    if (ops.length) {
+      ensure(48);
+      y += 6;
+      font("bold", 12);
+      color(BRAND);
+      doc.text("OPERATORS & LICENSES", M, y);
+      color(LINE, "draw");
+      doc.setLineWidth(0.8);
+      doc.line(M, y + 5, W - M, y + 5);
+      y += 20;
+      ops.forEach(function (o) {
+        ensure(22);
+        font("bold", 10.5);
+        color(INK);
+        doc.text(clean(o.name), M, y);
+        if (!o.photos.length) {
+          font("italic", 10);
+          color(MUTED);
+          doc.text("No license photo provided", M + doc.getTextWidth(clean(o.name)) + 12, y);
+        }
+        y += 12;
+        drawPhotos(o.photos, 0);
+        if (!o.photos.length) y += 6;
+      });
+      y += 4;
+    }
+
     // ---- notes ----
     if (d.notes || (d.notesPhotos && d.notesPhotos.length)) {
       ensure(40);
@@ -243,7 +277,7 @@
     y += 8;
     font("bold", 11);
     color(INK);
-    doc.text("Inspection certified accurate by " + clean(d.driver), M, y);
+    doc.text("Inspection certified accurate by " + clean(d.inspector) + " (inspector)", M, y);
     font("normal", 10);
     color(MUTED);
     doc.text(clean(d.dateStr), M, y + 15);
