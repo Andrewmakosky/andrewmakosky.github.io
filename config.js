@@ -7,7 +7,7 @@ window.APP_CONFIG = {
   companyName: "Snow Fleet",
 
   // Where completed reports are emailed. Separate multiple addresses with commas.
-  reportEmail: "fleet@example.com",
+  reportEmail: "andrew.makosky@cowbaycontracting.com",
 
   // OPTIONAL — send reports automatically, with no email app needed.
   // 1. Go to https://web3forms.com, enter the address that should receive reports,
