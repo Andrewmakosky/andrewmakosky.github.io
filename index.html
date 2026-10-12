@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Vehicle Checklist</title>
+  <meta name="description" content="Pre-trip inspection checklist for snow vehicles and equipment.">
+  <meta name="theme-color" content="#0b3d63">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Checklist">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="icons/icon.svg" alt="" width="32" height="32">
+      <div>
+        <div class="brand-name" id="brandName">Creative Snow by Cowbay</div>
+        <div class="brand-sub">Vehicle inspection</div>
+      </div>
+    </div>
+    <div class="progress" aria-live="polite"><span id="progressText">0 / 0</span></div>
+  </header>
+
+  <main id="formView">
+    <form id="checkForm" novalidate>
+      <section class="card">
+        <h2>Vehicle &amp; driver</h2>
+        <label class="field">
+          <span>Your name</span>
+          <input id="driver" name="driver" autocomplete="name" required>
+        </label>
+        <div class="row">
+          <label class="field">
+            <span>Unit / vehicle #</span>
+            <input id="unit" name="unit" required autocapitalize="characters">
+          </label>
+          <label class="field">
+            <span>Type</span>
+            <select id="vehicleType" name="vehicleType" required></select>
+          </label>
+        </div>
+        <div class="row">
+          <label class="field">
+            <span>Odometer / hours</span>
+            <input id="odometer" name="odometer" inputmode="decimal">
+          </label>
+          <label class="field">
+            <span>Fuel level</span>
+            <select id="fuel" name="fuel">
+              <option value="">—</option>
+              <option>Full</option>
+              <option>3/4</option>
+              <option>1/2</option>
+              <option>1/4</option>
+              <option>Low / reserve</option>
+            </select>
+          </label>
+        </div>
+        <label class="field">
+          <span>Site / route (optional)</span>
+          <input id="site" name="site">
+        </label>
+      </section>
+
+      <div class="quick">
+        <button type="button" class="btn ghost" id="allOkBtn">Mark remaining as OK</button>
+      </div>
+
+      <div id="checklist"></div>
+
+      <section class="card">
+        <h2>Overall</h2>
+        <fieldset class="field">
+          <legend>Is this vehicle safe to operate?</legend>
+          <div class="seg seg-2" role="radiogroup">
+            <label><input type="radio" name="safe" value="Yes" required><span>Yes</span></label>
+            <label><input type="radio" name="safe" value="No"><span>No — do not use</span></label>
+          </div>
+        </fieldset>
+        <label class="field">
+          <span>Other notes / damage</span>
+          <textarea id="notes" name="notes" rows="3"></textarea>
+        </label>
+        <label class="check">
+          <input type="checkbox" id="certify" required>
+          <span>I inspected this vehicle and the report is accurate.</span>
+        </label>
+      </section>
+
+      <p class="error" id="formError" role="alert" hidden></p>
+
+      <div class="actions">
+        <button type="submit" class="btn primary" id="submitBtn">Submit report</button>
+        <button type="button" class="btn ghost danger" id="resetBtn">Clear form</button>
+      </div>
+    </form>
+  </main>
+
+  <main id="doneView" hidden>
+    <section class="card done">
+      <div class="done-icon" aria-hidden="true">✓</div>
+      <h2 id="doneTitle">Report sent</h2>
+      <p id="doneMsg"></p>
+      <div class="actions">
+        <button type="button" class="btn ghost" id="resendBtn" hidden>Open email again</button>
+        <button type="button" class="btn ghost" id="shareBtn" hidden>Share report another way</button>
+        <button type="button" class="btn primary" id="newBtn">Start a new checklist</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
