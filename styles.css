@@ -178,7 +178,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--focus); out
 .policy p { margin: 0 0 8px; }
 .policy p:last-child { margin: 0; }
 
-.recipient {
+.recipient { flex-direction: column;
   display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;
   background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
   padding: 10px 12px; margin: 0 0 16px; font-weight: 600; font-size: 15px; overflow-wrap: anywhere;
@@ -201,3 +201,4 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--focus); out
   font-size: 24px; line-height: 1; cursor: pointer;
 }
 .btn.small { min-height: 46px; padding: 8px 12px; font-size: 16px; }
+#recipientText { white-space: pre-line; font-size: 14px; }

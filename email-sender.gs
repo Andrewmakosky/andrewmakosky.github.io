@@ -9,7 +9,7 @@
 
 // Reports can only ever be sent to these addresses, so nobody can use the
 // script to email anyone else. Separate multiple addresses with commas.
-var REPORT_TO = "andrew.makosky@cowbaycontracting.com";
+var REPORT_TO = "andrew.makosky@cowbaycontracting.com, patricia.vallejo@cowbaycontracting.com, mark.dalonzo@cowbaycontracting.com, brian.dalonzo@cowbaycontracting.com, ddalonzo@cowbaycontracting.com";
 
 var SENDER_NAME = "Creative Snow Inspections";
 
