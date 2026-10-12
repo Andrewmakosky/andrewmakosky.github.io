@@ -14,7 +14,7 @@ window.APP_CONFIG = {
   // Follow "Automatic emailing" in README.md to set up the free Google
   // Apps Script sender, then paste its Web app URL between the quotes.
   // Leave blank and drivers send the PDF from their phone's email app instead.
-  emailServiceUrl: "",
+  emailServiceUrl: "https://script.google.com/macros/s/AKfycbz-NCVD8CnM5mY6XbDiAavBrRl8XjXd-oVU0JGYhZs3llcsn_qH_IzHRNMTxGIu_ilV8A/exec",
 
   // Vehicle / equipment types the driver picks from.
   vehicleTypes: [
