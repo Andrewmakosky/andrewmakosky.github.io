@@ -1,4 +1,4 @@
-# Snow Fleet Vehicle Checklist
+# Creative Snow by Cowbay — Vehicle Checklist
 
 A mobile app for pre-trip vehicle and equipment inspections. Drivers fill out the checklist on their phone, and when they submit it, an inspection report is emailed to the office.
 

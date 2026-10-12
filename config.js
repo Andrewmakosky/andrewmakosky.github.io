@@ -1,10 +1,10 @@
 // ============================================================
-//  Snow Fleet Checklist — settings
+//  Creative Snow by Cowbay — checklist settings
 //  Edit this file to change where reports go and what gets checked.
 // ============================================================
 window.APP_CONFIG = {
   // Company / app name shown at the top of the app and in reports.
-  companyName: "Snow Fleet",
+  companyName: "Creative Snow by Cowbay",
 
   // Where completed reports are emailed. Separate multiple addresses with commas.
   reportEmail: "andrew.makosky@cowbaycontracting.com",
