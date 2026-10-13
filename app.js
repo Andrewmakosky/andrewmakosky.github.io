@@ -49,6 +49,9 @@
   // ---------- build the form ----------
   function itemId(i, j) { return "c" + i + "_" + j; }
 
+  // Checklist items are a name, or { name, passInput } to ask for a value on Pass.
+  function itemDef(x) { return typeof x === "string" ? { name: x } : x; }
+
   function build() {
     if (CFG.companyName) $("brandName").textContent = CFG.companyName;
 
@@ -68,7 +71,9 @@
       h.textContent = (i + 1) + ". " + sec.section;
       card.appendChild(h);
 
-      sec.items.forEach(function (name, j) {
+      sec.items.forEach(function (x, j) {
+        var def = itemDef(x);
+        var name = def.name;
         var id = itemId(i, j);
         var item = document.createElement("div");
         item.className = "item";
@@ -86,8 +91,13 @@
           '<div class="item-note" hidden>' +
             '<input name="' + id + '_note" placeholder="What failed?" aria-label="What failed?">' +
           '</div>' +
+          (def.passInput
+            ? '<label class="item-pass" hidden><span class="label"></span>' +
+                '<input name="' + id + '_pass" autocomplete="off" autocapitalize="characters"></label>'
+            : '') +
           '<div class="photos" data-photos="' + id + '"></div>';
         item.querySelector(".item-name").textContent = name;
+        if (def.passInput) item.querySelector(".item-pass .label").textContent = def.passInput;
         item.querySelector(".seg").setAttribute("aria-label", name);
         item.querySelector(".photo-btn").setAttribute("aria-label", "Add photo: " + name);
         card.appendChild(item);
@@ -107,8 +117,9 @@
   function allItems() {
     var out = [];
     (CFG.checklist || []).forEach(function (sec, i) {
-      sec.items.forEach(function (name, j) {
-        out.push({ section: sec.section, name: name, id: itemId(i, j) });
+      sec.items.forEach(function (x, j) {
+        var def = itemDef(x);
+        out.push({ section: sec.section, name: def.name, passInput: def.passInput, id: itemId(i, j) });
       });
     });
     return out;
@@ -286,6 +297,7 @@
       if (v) done++;
       var row = form.querySelector('.item[data-id="' + it.id + '"]');
       row.querySelector(".item-note").hidden = v !== "Fail";
+      if (it.passInput) row.querySelector(".item-pass").hidden = v !== "Pass";
       if (v) row.classList.remove("missing");
     });
     $("progressText").textContent = done + " / " + items.length;
@@ -384,6 +396,16 @@
       return false;
     }
 
+    var noPassValue = allItems().filter(function (it) {
+      return it.passInput && valueOf(it.id) === "Pass" && !form.elements[it.id + "_pass"].value.trim();
+    })[0];
+    if (noPassValue) {
+      var passInput = form.elements[noPassValue.id + "_pass"];
+      passInput.classList.add("invalid");
+      showError("Please enter the " + noPassValue.passInput + " for: " + noPassValue.name, passInput);
+      return false;
+    }
+
     if (!valueOf("safe")) {
       showError("Please answer whether the vehicle is safe to operate.", form.querySelector('input[name="safe"]').closest(".field"));
       return false;
@@ -440,17 +462,24 @@
       ["Site / route", $("site").value.trim()],
       ["Safe to operate", safe],
     ];
+    // Values asked for on Pass (e.g. the GPS ID number) also go up top.
+    items.forEach(function (it) {
+      if (it.passInput && valueOf(it.id) === "Pass") details.push([it.passInput, form.elements[it.id + "_pass"].value.trim()]);
+    });
 
     var sections = (CFG.checklist || []).map(function (sec, i) {
       return {
         name: (i + 1) + ". " + sec.section,
-        items: sec.items.map(function (name, j) {
+        items: sec.items.map(function (x, j) {
+          var def = itemDef(x);
           var id = itemId(i, j);
           var result = valueOf(id);
+          var passValue = def.passInput && result === "Pass" ? form.elements[id + "_pass"].value.trim() : "";
           return {
-            name: name,
+            name: def.name,
             result: result,
             note: result === "Fail" ? form.elements[id + "_note"].value.trim() : "",
+            detail: passValue ? def.passInput + ": " + passValue : "",
             photos: photos[id] || [],
           };
         }),
@@ -513,7 +542,8 @@
       L.push("");
       L.push("[" + s.name + "]");
       s.items.forEach(function (it) {
-        L.push("  " + (it.result === "Pass" ? "PASS" : it.result === "Fail" ? "FAIL" : "N/A ") + "  " + it.name);
+        L.push("  " + (it.result === "Pass" ? "PASS" : it.result === "Fail" ? "FAIL" : "N/A ") + "  " + it.name +
+          (it.detail ? " (" + it.detail + ")" : ""));
       });
     });
     L.push("");
