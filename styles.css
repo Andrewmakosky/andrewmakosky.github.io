@@ -189,6 +189,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--focus); out
   padding: 4px 12px; min-height: 36px; cursor: pointer;
 }
 .busy { opacity: .6; pointer-events: none; }
+.hint { color: var(--muted); font-size: 14px; margin: -4px 0 12px; }
+#extraEmails { display: grid; gap: 8px; margin-bottom: 10px; }
 .version { text-align: center; color: var(--muted); font-size: 13px; margin: 16px 0 0; }
 
 /* Operators */

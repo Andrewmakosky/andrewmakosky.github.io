@@ -14,6 +14,8 @@ It's a web app hosted on GitHub Pages, so there's nothing to download from an ap
 4. **Mark remaining as Pass** speeds up a clean inspection.
 5. They answer "Safe to operate?", read the Cow Bay policy, enter the **name of the inspector** (remembered for next time), confirm the inspection, and tap **Submit report**.
 
+Under **Also send to (optional)** they can add up to 3 one-time email addresses. The office still gets every report. Extra contacts get their own copy, and the office copy lists who else it went to. This needs the latest `email-sender.gs` deployed; with an older one, the app says the extra contacts were not sent the report.
+
 Progress and photos are saved on the phone as they go, so closing the app doesn't lose anything.
 
 ### The PDF report
