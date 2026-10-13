@@ -64,7 +64,7 @@ If you later change `email-sender.gs`, use **Deploy**, then **Manage deployments
 - **`checklist`**: sections and items. Add, remove or rename freely.
 - **`policy`**: the paragraphs shown before sign-off and printed on the report
 
-After changing any file, bump `VERSION` in `sw.js` (e.g. `v8` to `v9`) so phones pick up the new version.
+After changing any file, bump `APP_VERSION` in `version.js` (e.g. `v9` to `v10`) so phones pick up the new version. The version shows at the bottom of the form, which is a quick way to check a phone is up to date.
 
 ## Installing on a phone
 

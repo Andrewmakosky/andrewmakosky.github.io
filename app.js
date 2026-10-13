@@ -551,8 +551,27 @@
     window.scrollTo(0, 0);
   }
 
+  // Anything unexpected while submitting is shown instead of failing silently.
+  function reportProblem(err) {
+    var btn = $("submitBtn");
+    btn.disabled = false;
+    btn.textContent = "Submit report";
+    if (!$("formView").hidden) {
+      showError("Something went wrong: " + (err && err.message || err) +
+        ". Please take a screenshot of this and send it to the office (app " + (window.APP_VERSION || "?") + ").");
+    }
+  }
+
   function onSubmit(e) {
     e.preventDefault();
+    try {
+      submitReport();
+    } catch (err) {
+      reportProblem(err);
+    }
+  }
+
+  function submitReport() {
     if (!validate()) return;
     saveDraft();
     var btn = $("submitBtn");
@@ -561,35 +580,44 @@
 
     // Let the button repaint before the PDF work blocks the page.
     setTimeout(function () {
-      var r = buildReport();
-      var pdf;
       try {
-        pdf = window.buildPdfReport(r.pdfData);
+        createAndSend();
       } catch (err) {
-        btn.disabled = false;
-        btn.textContent = "Submit report";
-        showError("Couldn't create the PDF (" + err.message + "). Try removing some photos.");
-        return;
-      }
-      last = { report: r, pdf: pdf };
-
-      if (CFG.emailServiceUrl && navigator.onLine !== false) {
-        btn.textContent = "Sending…";
-        sendAuto(r, pdf).then(function () {
-          showDone("auto");
-          clearForm(true);
-        }).catch(function () {
-          showDone("failed");
-        }).then(function () {
-          btn.disabled = false;
-          btn.textContent = "Submit report";
-        });
-      } else {
-        showDone(CFG.emailServiceUrl ? "failed" : "manual");
-        btn.disabled = false;
-        btn.textContent = "Submit report";
+        reportProblem(err);
       }
     }, 50);
+  }
+
+  function createAndSend() {
+    var btn = $("submitBtn");
+    var r = buildReport();
+    var pdf;
+    try {
+      pdf = window.buildPdfReport(r.pdfData);
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = "Submit report";
+      showError("Couldn't create the PDF (" + err.message + "). Try removing some photos.");
+      return;
+    }
+    last = { report: r, pdf: pdf };
+
+    if (CFG.emailServiceUrl && navigator.onLine !== false) {
+      btn.textContent = "Sending…";
+      sendAuto(r, pdf).then(function () {
+        showDone("auto");
+        clearForm(true);
+      }).catch(function () {
+        showDone("failed");
+      }).then(function () {
+        btn.disabled = false;
+        btn.textContent = "Submit report";
+      });
+    } else {
+      showDone(CFG.emailServiceUrl ? "failed" : "manual");
+      btn.disabled = false;
+      btn.textContent = "Submit report";
+    }
   }
 
   function clearForm(keepView) {
@@ -697,6 +725,11 @@
     };
     if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, function () {});
   });
+
+  $("appVersion").textContent = "App version " + (window.APP_VERSION || "");
+
+  // Surface unexpected errors (e.g. in a promise) rather than failing silently.
+  window.addEventListener("unhandledrejection", function (e) { reportProblem(e.reason); });
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function () {

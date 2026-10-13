@@ -1,7 +1,7 @@
 // ============================================================
 //  Creative Snow by Cowbay — checklist settings
 //  Edit this file to change where reports go and what gets checked.
-//  After editing, bump VERSION in sw.js so phones pick up the change.
+//  After editing, bump APP_VERSION in version.js so phones pick up the change.
 // ============================================================
 window.APP_CONFIG = {
   // Name shown at the top of the app and on the PDF report.
