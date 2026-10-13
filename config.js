@@ -17,13 +17,18 @@ window.APP_CONFIG = {
   emailServiceUrl: "https://script.google.com/macros/s/AKfycbz-NCVD8CnM5mY6XbDiAavBrRl8XjXd-oVU0JGYhZs3llcsn_qH_IzHRNMTxGIu_ilV8A/exec",
 
   // Vehicle / equipment types the driver picks from.
+  // Keep "Other" last: choosing it asks the driver to type the vehicle type.
   vehicleTypes: [
-    "Plow truck",
-    "Pickup w/ plow",
-    "Salt / sand spreader truck",
-    "Loader",
+    "Pickup with plow",
+    "Pickup with plow and spreader",
+    "Small dump truck with plow",
+    "Small dump truck with plow and spreader",
+    "Large dump truck with plow",
+    "Large dump truck with plow and spreader",
     "Skid steer",
-    "Sidewalk machine / tractor",
+    "Small loader",
+    "Large payloader",
+    "Sidewalk machine / ATV",
     "Other",
   ],
 

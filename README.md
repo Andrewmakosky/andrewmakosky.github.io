@@ -8,7 +8,7 @@ It's a web app hosted on GitHub Pages, so there's nothing to download from an ap
 
 ## How it works for drivers
 
-1. They enter the **operators for this vehicle** with a 📷 photo of each operator's driver's license (**+ Add another operator** for more), plus unit #, type, hours/odometer, fuel level and site/route.
+1. They enter the **company**, the **operators for this vehicle** with a 📷 photo of each operator's driver's license (**+ Add another operator** for more), the unit #, type of vehicle (choosing **Other** asks what kind), odometer/hours, a 📷 **vehicle photo**, and site/route.
 2. They mark each item **Pass / Fail / N/A**. A **Fail** requires a short note.
 3. The 📷 button on any item adds photos (camera or photo library). There's also a photo button under **Other notes / damage**.
 4. **Mark remaining as Pass** speeds up a clean inspection.
@@ -19,7 +19,7 @@ Progress and photos are saved on the phone as they go, so closing the app doesn'
 ### The PDF report
 
 - A status badge: **ALL PASS**, **N FAILED ITEMS** or **OUT OF SERVICE**
-- Vehicle, operators, inspector, date, odometer, fuel and site details
+- Company, vehicle, operators, inspector, date, odometer and site details, plus the vehicle photo
 - A red **Problems found** box listing every failed item with its note
 - The full checklist with Pass/Fail/N/A for every item, and photos under the item they belong to
 - An **Operators & licenses** section with each operator's license photo
@@ -64,7 +64,7 @@ If you later change `email-sender.gs`, use **Deploy**, then **Manage deployments
 - **`checklist`**: sections and items. Add, remove or rename freely.
 - **`policy`**: the paragraphs shown before sign-off and printed on the report
 
-After changing any file, bump `VERSION` in `sw.js` (e.g. `v5` to `v6`) so phones pick up the new version.
+After changing any file, bump `VERSION` in `sw.js` (e.g. `v8` to `v9`) so phones pick up the new version.
 
 ## Installing on a phone
 
