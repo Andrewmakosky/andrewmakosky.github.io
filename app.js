@@ -242,6 +242,35 @@
   }
 
   // ---------- UI updates ----------
+  // ---------- one-time extra recipients ----------
+  var EMAIL_RE = /^[^\s@,;<>"]+@[^\s@,;<>"]+\.[A-Za-z]{2,}$/;
+
+  function extraInputs() { return $("extraEmails").querySelectorAll("input"); }
+
+  function showExtraRows() {
+    var inputs = extraInputs();
+    var last = 0;
+    inputs.forEach(function (el, i) { if (el.value.trim()) last = i; });
+    inputs.forEach(function (el, i) { if (i <= last) el.hidden = false; });
+    updateAddEmailBtn();
+  }
+
+  function updateAddEmailBtn() {
+    var hidden = Array.prototype.filter.call(extraInputs(), function (el) { return el.hidden; });
+    $("addEmailBtn").hidden = !hidden.length;
+  }
+
+  // Valid, unique addresses not already on the office list.
+  function extraEmails() {
+    var office = (CFG.reportEmail || "").toLowerCase().split(",").map(function (a) { return a.trim(); });
+    var out = [];
+    extraInputs().forEach(function (el) {
+      var a = el.value.trim().toLowerCase();
+      if (a && office.indexOf(a) < 0 && out.indexOf(a) < 0) out.push(a);
+    });
+    return out;
+  }
+
   function vehicleTypeText() {
     var t = $("vehicleType").value;
     var other = $("vehicleOther").value.trim();
@@ -364,6 +393,14 @@
       showError("Please enter the name of the inspector.", $("inspector"));
       return false;
     }
+    var badEmail = Array.prototype.filter.call(extraInputs(), function (el) {
+      return el.value.trim() && !EMAIL_RE.test(el.value.trim());
+    })[0];
+    if (badEmail) {
+      badEmail.classList.add("invalid");
+      showError("Please check this email address: " + badEmail.value.trim(), badEmail);
+      return false;
+    }
     if (!$("certify").checked) {
       showError("Please tick the box confirming the inspection.", $("certify"));
       return false;
@@ -448,6 +485,7 @@
       summary: L.join("\n"),
       photoCount: photoCount,
       outOfService: kind !== "ok",
+      extraTo: extraEmails(),
       filename: "Inspection_Unit-" + safeUnit + "_" + isoDate + ".pdf",
       pdfData: {
         company: appName,
@@ -485,7 +523,8 @@
 
   // ---------- sending ----------
   function mailtoUrl(r, body) {
-    return "mailto:" + encodeURIComponent((CFG.reportEmail || "").replace(/\s+/g, "")).replace(/%2C/g, ",").replace(/%40/g, "@") +
+    var to = [CFG.reportEmail || ""].concat(r.extraTo || []).filter(Boolean).join(",");
+    return "mailto:" + encodeURIComponent(to.replace(/\s+/g, "")).replace(/%2C/g, ",").replace(/%40/g, "@") +
       "?subject=" + encodeURIComponent(r.subject) +
       "&body=" + encodeURIComponent(body);
   }
@@ -508,6 +547,7 @@
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({
         to: CFG.reportEmail,
+        extraTo: r.extraTo,
         subject: r.subject,
         body: r.summary + "\n\nThe full inspection report is attached as a PDF.",
         filename: pdf.filename,
@@ -516,22 +556,29 @@
     }).then(function (res) {
       return res.json().then(function (j) {
         if (!res.ok || !j.ok) throw new Error(j.error || "Send failed");
+        return j;
       });
     });
   }
 
-  function showDone(mode) {
+  function showDone(mode, result) {
     var r = last.report;
     $("formView").hidden = true;
     $("doneView").hidden = false;
     document.querySelector(".done").classList.toggle("warn", r.outOfService);
 
     var sharable = canSharePdf();
-    var to = CFG.reportEmail || "";
+    var to = [CFG.reportEmail || ""].concat(r.extraTo).filter(Boolean).join(",");
     if (mode === "auto") {
+      var extras = r.extraTo.join(", ");
+      // An older email sender ignores extra addresses and doesn't report extraSent.
+      var extrasMissed = r.extraTo.length && !(result && result.extraSent);
       $("doneIcon").textContent = "✓";
       $("doneTitle").textContent = "Report sent";
-      $("doneMsg").textContent = "The PDF report for unit " + $("unit").value.trim() + " has been emailed to the office.";
+      $("doneMsg").textContent = "The PDF report for unit " + $("unit").value.trim() + " has been emailed to the office" +
+        (!r.extraTo.length ? "." : extrasMissed
+          ? ". It could NOT be sent to " + extras + " because the email sender needs an update. Use Save PDF to phone to send it yourself."
+          : " and to " + extras + ".");
       $("recipientBox").hidden = true;
       $("sharePdfBtn").hidden = true;
       $("mailtoBtn").hidden = true;
@@ -604,8 +651,8 @@
 
     if (CFG.emailServiceUrl && navigator.onLine !== false) {
       btn.textContent = "Sending…";
-      sendAuto(r, pdf).then(function () {
-        showDone("auto");
+      sendAuto(r, pdf).then(function (result) {
+        showDone("auto", result);
         clearForm(true);
       }).catch(function () {
         showDone("failed");
@@ -633,6 +680,8 @@
     photos = {};
     savePhotos();
     resetOperators();
+    extraInputs().forEach(function (el, i) { el.hidden = i > 0; });
+    updateAddEmailBtn();
     renderAllPhotos();
     refresh();
     if (!keepView) window.scrollTo(0, 0);
@@ -664,6 +713,13 @@
   });
   $("photoInput").addEventListener("change", function () {
     if (photoTarget && this.files.length) addPhotos(photoTarget, this.files);
+  });
+
+  showExtraRows();
+  $("addEmailBtn").addEventListener("click", function () {
+    var next = Array.prototype.filter.call(extraInputs(), function (el) { return el.hidden; })[0];
+    if (next) { next.hidden = false; next.focus(); }
+    updateAddEmailBtn();
   });
 
   $("addOperatorBtn").addEventListener("click", function () {

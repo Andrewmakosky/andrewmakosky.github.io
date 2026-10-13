@@ -99,6 +99,17 @@
         </label>
       </section>
 
+      <section class="card">
+        <h2>Also send to (optional)</h2>
+        <p class="hint">The office always gets this report. To also send it to someone else, just this once, add up to 3 email addresses.</p>
+        <div id="extraEmails">
+          <input type="email" name="extraEmail1" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="name@example.com" aria-label="Extra email address 1">
+          <input type="email" name="extraEmail2" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="name@example.com" aria-label="Extra email address 2" hidden>
+          <input type="email" name="extraEmail3" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="name@example.com" aria-label="Extra email address 3" hidden>
+        </div>
+        <button type="button" class="btn ghost small" id="addEmailBtn">+ Add another email</button>
+      </section>
+
       <p class="error" id="formError" role="alert" hidden></p>
 
       <div class="actions">
