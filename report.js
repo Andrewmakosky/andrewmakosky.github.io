@@ -98,6 +98,16 @@
       y += rowH;
     }
 
+    // ---- vehicle photo ----
+    if (d.vehiclePhotos && d.vehiclePhotos.length) {
+      ensure(30);
+      font("normal", 9);
+      color(MUTED);
+      doc.text("VEHICLE PHOTO", M, y);
+      y += 8;
+      drawPhotos(d.vehiclePhotos, 0);
+    }
+
     // ---- problems summary ----
     var fails = [];
     d.sections.forEach(function (s) {

@@ -31,37 +31,35 @@
     <form id="checkForm" novalidate>
       <section class="card">
         <h2>Vehicle &amp; operators</h2>
+        <label class="field">
+          <span>Company</span>
+          <input id="company" name="company" autocomplete="organization" required>
+        </label>
         <div class="field">
           <span class="label">Operators for this vehicle</span>
           <div id="operators"></div>
           <button type="button" class="btn ghost small" id="addOperatorBtn">+ Add another operator</button>
         </div>
-        <div class="row">
-          <label class="field">
-            <span>Unit / vehicle #</span>
-            <input id="unit" name="unit" required autocapitalize="characters">
-          </label>
-          <label class="field">
-            <span>Type</span>
-            <select id="vehicleType" name="vehicleType" required></select>
-          </label>
-        </div>
-        <div class="row">
-          <label class="field">
-            <span>Odometer / hours</span>
-            <input id="odometer" name="odometer" inputmode="decimal">
-          </label>
-          <label class="field">
-            <span>Fuel level</span>
-            <select id="fuel" name="fuel">
-              <option value="">—</option>
-              <option>Full</option>
-              <option>3/4</option>
-              <option>1/2</option>
-              <option>1/4</option>
-              <option>Low / reserve</option>
-            </select>
-          </label>
+        <label class="field">
+          <span>Unit / vehicle #</span>
+          <input id="unit" name="unit" required autocapitalize="characters">
+        </label>
+        <label class="field">
+          <span>Type of vehicle</span>
+          <select id="vehicleType" name="vehicleType" required></select>
+        </label>
+        <label class="field" id="vehicleOtherField" hidden>
+          <span>What kind of vehicle?</span>
+          <input id="vehicleOther" name="vehicleOther">
+        </label>
+        <label class="field">
+          <span>Odometer / hours</span>
+          <input id="odometer" name="odometer" inputmode="decimal">
+        </label>
+        <div class="field">
+          <span class="label">Vehicle photo</span>
+          <div class="photos" data-photos="vehicle"></div>
+          <button type="button" class="photo-btn wide" data-add-photo="vehicle">📷 Add vehicle photo<span class="count"></span></button>
         </div>
         <label class="field">
           <span>Site / route (optional)</span>

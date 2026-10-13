@@ -242,7 +242,14 @@
   }
 
   // ---------- UI updates ----------
+  function vehicleTypeText() {
+    var t = $("vehicleType").value;
+    var other = $("vehicleOther").value.trim();
+    return t === "Other" && other ? "Other: " + other : t;
+  }
+
   function refresh() {
+    $("vehicleOtherField").hidden = $("vehicleType").value !== "Other";
     var items = allItems();
     var done = 0;
     items.forEach(function (it) {
@@ -300,6 +307,12 @@
     $("formError").hidden = true;
     form.querySelectorAll(".invalid").forEach(function (el) { el.classList.remove("invalid"); });
 
+    if (!$("company").value.trim()) {
+      $("company").classList.add("invalid");
+      showError("Please enter the company.", $("company"));
+      return false;
+    }
+
     var opInputs = $("operators").querySelectorAll("input");
     var named = Array.prototype.filter.call(opInputs, function (i) { return i.value.trim(); });
     if (!named.length) {
@@ -309,10 +322,11 @@
     }
 
     var req = [$("unit"), $("vehicleType")];
+    if ($("vehicleType").value === "Other") req.push($("vehicleOther"));
     for (var k = 0; k < req.length; k++) {
       if (!req[k].value.trim()) {
         req[k].classList.add("invalid");
-        showError("Please fill in unit # and vehicle type.", req[k]);
+        showError(req[k] === $("vehicleOther") ? "Please enter what kind of vehicle this is." : "Please fill in unit # and type of vehicle.", req[k]);
         return false;
       }
     }
@@ -371,20 +385,21 @@
     var safe = valueOf("safe");
     var unit = $("unit").value.trim();
     var inspector = $("inspector").value.trim();
+    var company = $("company").value.trim();
     var operators = getOperators().filter(function (o) { return o.name; });
     var operatorNames = operators.map(function (o) { return o.name; }).join(", ");
-    var company = CFG.companyName || "Fleet";
+    var appName = CFG.companyName || "Fleet";
     var kind = safe === "No" ? "oos" : fails.length ? "issues" : "ok";
     var flag = kind === "oos" ? "OUT OF SERVICE" : kind === "issues" ? fails.length + " FAILED ITEM" + (fails.length > 1 ? "S" : "") : "ALL PASS";
 
     var details = [
+      ["Company", company],
       ["Unit / vehicle #", unit],
-      ["Type", $("vehicleType").value],
+      ["Type", vehicleTypeText()],
+      ["Odometer / hours", $("odometer").value.trim()],
       ["Operator" + (operators.length > 1 ? "s" : ""), operatorNames],
       ["Inspector", inspector],
       ["Date", when],
-      ["Odometer / hours", $("odometer").value.trim()],
-      ["Fuel level", $("fuel").value],
       ["Site / route", $("site").value.trim()],
       ["Safe to operate", safe],
     ];
@@ -407,7 +422,7 @@
 
     // Plain-text summary for the email body.
     var L = [];
-    L.push(company + " - Vehicle Inspection");
+    L.push(appName + " - Vehicle Inspection");
     L.push("");
     L.push("STATUS: " + flag);
     details.forEach(function (d) { if (d[1]) L.push(d[0] + ": " + d[1]); });
@@ -429,24 +444,25 @@
     var safeUnit = unit.replace(/[^A-Za-z0-9-]+/g, "-").replace(/^-+|-+$/g, "") || "vehicle";
 
     return {
-      subject: "[" + flag + "] Unit " + unit + " inspection - " + inspector + " - " + now.toLocaleDateString(),
+      subject: "[" + flag + "] Unit " + unit + (company ? " (" + company + ")" : "") + " inspection - " + inspector + " - " + now.toLocaleDateString(),
       summary: L.join("\n"),
       photoCount: photoCount,
       outOfService: kind !== "ok",
       filename: "Inspection_Unit-" + safeUnit + "_" + isoDate + ".pdf",
       pdfData: {
-        company: company,
+        company: appName,
         status: { kind: kind, label: flag },
         details: details,
         safe: safe,
         sections: sections,
         notes: $("notes").value.trim(),
         notesPhotos: photos.notes || [],
+        vehiclePhotos: photos.vehicle || [],
         policy: CFG.policy || [],
         inspector: inspector,
         operators: operators.map(function (o) { return { name: o.name, photos: photos[o.id] || [] }; }),
         dateStr: when,
-        footer: company + "  |  Unit " + unit + "  |  " + when,
+        footer: appName + "  |  Unit " + unit + "  |  " + when,
         filename: "Inspection_Unit-" + safeUnit + "_" + isoDate + ".pdf",
       },
     };
