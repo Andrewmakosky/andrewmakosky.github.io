@@ -33,6 +33,8 @@ window.APP_CONFIG = {
   ],
 
   // The checklist. Add, remove or rename sections and items freely.
+  // An item can also be { name: "...", passInput: "Label" }: answering Pass
+  // then shows a required box with that label (e.g. the GPS ID number).
   checklist: [
     {
       section: "Paperwork",
@@ -129,7 +131,7 @@ window.APP_CONFIG = {
         "Plow: raise, lower, angle",
         "Spreader running",
         "Warning lights and backup alarm",
-        "GPS signal verified",
+        { name: "GPS signal verified", passInput: "GPS ID number" },
       ],
     },
   ],

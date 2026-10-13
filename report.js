@@ -186,7 +186,8 @@
         font("normal", 10.5);
         var tl = lines(it.name, TEXT_W);
         var nl = it.note ? (font("italic", 10), lines("Note: " + it.note, TEXT_W)) : [];
-        var h = Math.max(16, tl.length * lineH(10.5)) + nl.length * lineH(10) + 6;
+        var dl = it.detail ? (font("bold", 10), lines(it.detail, TEXT_W)) : [];
+        var h = Math.max(16, tl.length * lineH(10.5)) + (nl.length + dl.length) * lineH(10) + 6;
         ensure(h);
 
         var c = COLORS[it.result] || COLORS["N/A"];
@@ -205,6 +206,12 @@
           color(COLORS.Fail.fg);
           doc.text(nl, TEXT_X, y);
           y += nl.length * lineH(10);
+        }
+        if (dl.length) {
+          font("bold", 10);
+          color(BRAND);
+          doc.text(dl, TEXT_X, y);
+          y += dl.length * lineH(10);
         }
         y += 6;
         drawPhotos(it.photos, PILL + 10);
