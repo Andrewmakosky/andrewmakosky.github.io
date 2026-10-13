@@ -189,6 +189,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--focus); out
   padding: 4px 12px; min-height: 36px; cursor: pointer;
 }
 .busy { opacity: .6; pointer-events: none; }
+.version { text-align: center; color: var(--muted); font-size: 13px; margin: 16px 0 0; }
 
 /* Operators */
 .operator { padding: 12px; margin: 0 0 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
