@@ -11,8 +11,7 @@ It's a web app hosted on GitHub Pages, so there's nothing to download from an ap
 1. They enter the **company**, the **operators for this vehicle** with a 📷 photo of each operator's driver's license (**+ Add another operator** for more), the vehicle type (tap **Truck** or **Machine**, then pick from the list; **Other** asks what kind), the unit #, a 📷 **vehicle photo**, the odometer, and site/route.
 2. They mark each item **Pass / Fail / N/A**. A **Fail** requires a short note.
 3. The 📷 button on any item adds photos (camera or photo library). There's also a photo button under **Other notes / damage**.
-4. **Mark remaining as Pass** speeds up a clean inspection.
-5. They answer "Safe to operate?", read the Cow Bay policy, enter the **name of the inspector** (remembered for next time), confirm the inspection, and tap **Submit report**.
+4. They answer "Safe to operate?", read the Cow Bay policy, enter the **name of the inspector** (remembered for next time), confirm the inspection, and tap **Submit report**.
 
 Under **Also send to (optional)** they can add up to 3 one-time email addresses. The office still gets every report. Extra contacts get their own copy, and the office copy lists who else it went to. This needs the latest `email-sender.gs` deployed; with an older one, the app says the extra contacts were not sent the report.
 
