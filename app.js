@@ -505,7 +505,7 @@
       ["Vehicle type", vehicleTypeText()],
       [unitLabel(), unit],
       ["Vehicle operator" + (operators.length > 1 ? "s" : ""), operatorNames],
-      ["Odometer / hours", $("odometer").value.trim()],
+      ["Odometer", $("odometer").value.trim()],
       ["Site / route", $("site").value.trim()],
       ["Inspector", inspector],
       ["Date", when],
