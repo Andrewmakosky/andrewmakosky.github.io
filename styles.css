@@ -131,6 +131,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--focus); out
 .seg input[value="Yes"]:checked + span { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
 .seg input[value="Fail"]:checked + span,
 .seg input[value="No"]:checked + span { background: var(--fail-bg); border-color: var(--fail); color: var(--fail); }
+.seg.choice input:checked + span { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
 .seg input[value="N/A"]:checked + span { background: var(--na-bg); border-color: var(--na); color: var(--na); }
 
 .check { display: flex; gap: 12px; align-items: flex-start; font-size: 16px; }

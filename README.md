@@ -8,7 +8,7 @@ It's a web app hosted on GitHub Pages, so there's nothing to download from an ap
 
 ## How it works for drivers
 
-1. They enter the **company**, the **operators for this vehicle** with a 📷 photo of each operator's driver's license (**+ Add another operator** for more), the unit #, type of vehicle (choosing **Other** asks what kind), odometer/hours, a 📷 **vehicle photo**, and site/route.
+1. They enter the **company**, the **operators for this vehicle** with a 📷 photo of each operator's driver's license (**+ Add another operator** for more), the vehicle type (tap **Truck** or **Machine**, then pick from the list; **Other** asks what kind), the unit #, odometer/hours, a 📷 **vehicle photo**, and site/route.
 2. They mark each item **Pass / Fail / N/A**. A **Fail** requires a short note.
 3. The 📷 button on any item adds photos (camera or photo library). There's also a photo button under **Other notes / damage**.
 4. **Mark remaining as Pass** speeds up a clean inspection.
@@ -62,7 +62,7 @@ If you later change `email-sender.gs`, use **Deploy**, then **Manage deployments
 - **`companyName`**: the name shown in the app and on the PDF
 - **`reportEmail`**: where reports go
 - **`emailServiceUrl`**: the Apps Script URL for automatic emailing (blank = manual)
-- **`vehicleTypes`**: the vehicle types drivers pick from
+- **`vehicleTypes`**: the Truck and Machine lists drivers pick from
 - **`checklist`**: sections and items. Add, remove or rename freely.
 - **`policy`**: the paragraphs shown before sign-off and printed on the report
 
