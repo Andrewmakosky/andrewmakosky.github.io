@@ -30,23 +30,23 @@
           <span>Company</span>
           <input id="company" name="company" autocomplete="organization" required>
         </label>
-        <div class="field">
-          <span class="label">Operators for this vehicle</span>
-          <div id="operators"></div>
-          <button type="button" class="btn ghost small" id="addOperatorBtn">+ Add another operator</button>
-        </div>
         <label class="field">
-          <span>Unit / vehicle #</span>
-          <input id="unit" name="unit" required autocapitalize="characters">
-        </label>
-        <label class="field">
-          <span>Type of vehicle</span>
+          <span>Vehicle type</span>
           <select id="vehicleType" name="vehicleType" required></select>
         </label>
         <label class="field" id="vehicleOtherField" hidden>
           <span>What kind of vehicle?</span>
           <input id="vehicleOther" name="vehicleOther">
         </label>
+        <label class="field">
+          <span>Unit / vehicle #</span>
+          <input id="unit" name="unit" required autocapitalize="characters">
+        </label>
+        <div class="field">
+          <span class="label">Vehicle operator</span>
+          <div id="operators"></div>
+          <button type="button" class="btn ghost small" id="addOperatorBtn">+ Add another operator</button>
+        </div>
         <label class="field">
           <span>Odometer / hours</span>
           <input id="odometer" name="odometer" inputmode="decimal">

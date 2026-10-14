@@ -354,22 +354,27 @@
       return false;
     }
 
+    var fields = [
+      [$("vehicleType"), "Please choose the vehicle type."],
+      [$("vehicleOther"), "Please enter what kind of vehicle this is.", $("vehicleType").value === "Other"],
+      [$("unit"), "Please enter the unit / vehicle #."],
+    ];
+    for (var k = 0; k < fields.length; k++) {
+      var f = fields[k];
+      if (f.length > 2 && !f[2]) continue;
+      if (!f[0].value.trim()) {
+        f[0].classList.add("invalid");
+        showError(f[1], f[0]);
+        return false;
+      }
+    }
+
     var opInputs = $("operators").querySelectorAll("input");
     var named = Array.prototype.filter.call(opInputs, function (i) { return i.value.trim(); });
     if (!named.length) {
       opInputs[0].classList.add("invalid");
-      showError("Please enter at least one operator for this vehicle.", opInputs[0]);
+      showError("Please enter at least one vehicle operator.", opInputs[0]);
       return false;
-    }
-
-    var req = [$("unit"), $("vehicleType")];
-    if ($("vehicleType").value === "Other") req.push($("vehicleOther"));
-    for (var k = 0; k < req.length; k++) {
-      if (!req[k].value.trim()) {
-        req[k].classList.add("invalid");
-        showError(req[k] === $("vehicleOther") ? "Please enter what kind of vehicle this is." : "Please fill in unit # and type of vehicle.", req[k]);
-        return false;
-      }
     }
 
     var firstMissing = null, missing = 0;
@@ -453,13 +458,13 @@
 
     var details = [
       ["Company", company],
+      ["Vehicle type", vehicleTypeText()],
       ["Unit / vehicle #", unit],
-      ["Type", vehicleTypeText()],
+      ["Vehicle operator" + (operators.length > 1 ? "s" : ""), operatorNames],
       ["Odometer / hours", $("odometer").value.trim()],
-      ["Operator" + (operators.length > 1 ? "s" : ""), operatorNames],
+      ["Site / route", $("site").value.trim()],
       ["Inspector", inspector],
       ["Date", when],
-      ["Site / route", $("site").value.trim()],
       ["Safe to operate", safe],
     ];
     // Values asked for on Pass (e.g. the GPS ID number) also go up top.
