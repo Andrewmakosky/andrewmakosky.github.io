@@ -20,20 +20,27 @@ window.APP_CONFIG = {
   emailServiceUrl: "https://script.google.com/macros/s/AKfycbz-NCVD8CnM5mY6XbDiAavBrRl8XjXd-oVU0JGYhZs3llcsn_qH_IzHRNMTxGIu_ilV8A/exec",
 
   // Vehicle / equipment types the driver picks from.
-  // Keep "Other" last: choosing it asks the driver to type the vehicle type.
-  vehicleTypes: [
-    "Pickup with plow",
-    "Pickup with plow and spreader",
-    "Small dump truck with plow",
-    "Small dump truck with plow and spreader",
-    "Large dump truck with plow",
-    "Large dump truck with plow and spreader",
-    "Skid steer",
-    "Small loader",
-    "Large payloader",
-    "Sidewalk machine / ATV",
-    "Other",
-  ],
+  // Keep "Other" last in each list: choosing it asks the driver to type the vehicle type.
+  // The driver first taps a category, then picks from its list.
+  vehicleTypes: {
+    Truck: [
+      "Pickup with Plow",
+      "Pickup with Plow and Spreader",
+      "Small Dump Truck with Plow",
+      "Small Dump Truck with Plow and Spreader",
+      "Large Dump Truck with Plow",
+      "Large Dump Truck with Plow and Spreader",
+      "Other",
+    ],
+    Machine: [
+      "Skid Steer",
+      "Small Loader",
+      "Large Payloader",
+      "Backhoe",
+      "Sidewalk Machine / ATV",
+      "Other",
+    ],
+  },
 
   // The checklist. Add, remove or rename sections and items freely.
   // An item can also be { name: "...", passInput: "Label" }: answering Pass

@@ -55,12 +55,13 @@
   function build() {
     if (CFG.appTitle) $("brandName").textContent = CFG.appTitle;
 
-    var sel = $("vehicleType");
-    sel.innerHTML = '<option value="">Select…</option>';
-    (CFG.vehicleTypes || []).forEach(function (t) {
-      var o = document.createElement("option");
-      o.textContent = t;
-      sel.appendChild(o);
+    var cats = $("vehicleCategory");
+    Object.keys(CFG.vehicleTypes || {}).forEach(function (c) {
+      var l = document.createElement("label");
+      l.innerHTML = '<input type="radio" name="vehicleCategory"><span></span>';
+      l.querySelector("input").value = c;
+      l.querySelector("span").textContent = c;
+      cats.appendChild(l);
     });
 
     var root = $("checklist");
@@ -282,14 +283,33 @@
     return out;
   }
 
+  // Fill the vehicle list for the chosen category (Truck / Machine),
+  // keeping the current pick if it's still in the list.
+  function populateTypes() {
+    var cat = valueOf("vehicleCategory");
+    var sel = $("vehicleType");
+    var keep = sel.value;
+    var list = (CFG.vehicleTypes || {})[cat] || [];
+    sel.innerHTML = '<option value="">Select…</option>';
+    list.forEach(function (t) {
+      var o = document.createElement("option");
+      o.textContent = t;
+      sel.appendChild(o);
+    });
+    sel.value = list.indexOf(keep) >= 0 ? keep : "";
+    $("vehicleTypeLabel").textContent = cat ? "Which " + cat.toLowerCase() + "?" : "Which one?";
+  }
+
   function vehicleTypeText() {
+    var cat = valueOf("vehicleCategory");
     var t = $("vehicleType").value;
     var other = $("vehicleOther").value.trim();
-    return t === "Other" && other ? "Other: " + other : t;
+    return cat + ": " + (t === "Other" && other ? "Other - " + other : t);
   }
 
   function refresh() {
-    $("vehicleOtherField").hidden = $("vehicleType").value !== "Other";
+    $("vehicleTypeField").hidden = !valueOf("vehicleCategory");
+    $("vehicleOtherField").hidden = $("vehicleTypeField").hidden || $("vehicleType").value !== "Other";
     var items = allItems();
     var done = 0;
     items.forEach(function (it) {
@@ -329,6 +349,9 @@
         else if (el.type === "checkbox") el.checked = !!data[key];
         else el.value = data[key];
       });
+      // The vehicle list only exists once a category is set.
+      populateTypes();
+      $("vehicleType").value = data.vehicleType || "";
     }
     if (!$("inspector").value) $("inspector").value = load(INSPECTOR_KEY) || "";
   }
@@ -351,6 +374,11 @@
     if (!$("company").value.trim()) {
       $("company").classList.add("invalid");
       showError("Please enter the company.", $("company"));
+      return false;
+    }
+
+    if (!valueOf("vehicleCategory")) {
+      showError("Please choose Truck or Machine.", $("vehicleCategory"));
       return false;
     }
 
@@ -733,6 +761,7 @@
 
   form.addEventListener("change", function (e) {
     if (e.target.type === "file") return;
+    if (e.target.name === "vehicleCategory") populateTypes();
     refresh();
     saveDraft();
   });

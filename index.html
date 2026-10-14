@@ -30,8 +30,12 @@
           <span>Company</span>
           <input id="company" name="company" autocomplete="organization" required>
         </label>
-        <label class="field">
-          <span>Vehicle type</span>
+        <fieldset class="field">
+          <legend>Vehicle type</legend>
+          <div class="seg seg-2 choice" id="vehicleCategory" role="radiogroup"></div>
+        </fieldset>
+        <label class="field" id="vehicleTypeField" hidden>
+          <span id="vehicleTypeLabel">Which one?</span>
           <select id="vehicleType" name="vehicleType" required></select>
         </label>
         <label class="field" id="vehicleOtherField" hidden>
