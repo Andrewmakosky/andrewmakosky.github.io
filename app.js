@@ -808,14 +808,6 @@
     saveDraft();
   });
 
-  $("allOkBtn").addEventListener("click", function () {
-    allItems().forEach(function (it) {
-      if (!valueOf(it.id)) form.querySelector('input[name="' + it.id + '"][value="Pass"]').checked = true;
-    });
-    refresh();
-    saveDraft();
-  });
-
   $("resetBtn").addEventListener("click", function () {
     if (confirm("Clear this checklist and all photos, and start over?")) clearForm();
   });
