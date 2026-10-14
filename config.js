@@ -35,7 +35,7 @@ window.APP_CONFIG = {
   // Label for the unit number box.
   unitLabels: {
     Truck: "Unit / vehicle #",
-    Machine: "Unit / machine number",
+    Machine: "Unit / machine #",
   },
   vehicleTypes: {
     Truck: [
