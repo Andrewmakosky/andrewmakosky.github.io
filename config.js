@@ -22,6 +22,11 @@ window.APP_CONFIG = {
   // Vehicle / equipment types the driver picks from.
   // Keep "Other" last in each list: choosing it asks the driver to type the vehicle type.
   // The driver first taps a category, then picks from its list.
+  // Heading over the dropdown for each category.
+  vehicleTypeLabels: {
+    Truck: "Type of Vehicle",
+    Machine: "Type of Machine",
+  },
   vehicleTypes: {
     Truck: [
       "Pickup with Plow",

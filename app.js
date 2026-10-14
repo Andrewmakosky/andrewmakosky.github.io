@@ -297,7 +297,7 @@
       sel.appendChild(o);
     });
     sel.value = list.indexOf(keep) >= 0 ? keep : "";
-    $("vehicleTypeLabel").textContent = cat ? "Which " + cat.toLowerCase() + "?" : "Which one?";
+    $("vehicleTypeLabel").textContent = (CFG.vehicleTypeLabels || {})[cat] || "Type of " + cat;
   }
 
   function vehicleTypeText() {
@@ -384,7 +384,7 @@
 
     var fields = [
       [$("vehicleType"), "Please choose the vehicle type."],
-      [$("vehicleOther"), "Please enter what kind of vehicle this is.", $("vehicleType").value === "Other"],
+      [$("vehicleOther"), "Please describe your vehicle.", $("vehicleType").value === "Other"],
       [$("unit"), "Please enter the unit / vehicle #."],
     ];
     for (var k = 0; k < fields.length; k++) {
