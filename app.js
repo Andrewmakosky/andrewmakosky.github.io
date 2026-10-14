@@ -297,8 +297,18 @@
       sel.appendChild(o);
     });
     sel.value = list.indexOf(keep) >= 0 ? keep : "";
+  }
+
+  // Labels that change with Truck / Machine.
+  function updateLabels() {
+    var cat = valueOf("vehicleCategory");
     $("vehicleTypeLabel").textContent = (CFG.vehicleTypeLabels || {})[cat] || "Type of " + cat;
     $("vehicleOtherLabel").textContent = otherLabel();
+    $("unitLabel").textContent = unitLabel();
+  }
+
+  function unitLabel() {
+    return (CFG.unitLabels || {})[valueOf("vehicleCategory")] || "Unit / vehicle #";
   }
 
   function otherLabel() {
@@ -313,6 +323,7 @@
   }
 
   function refresh() {
+    updateLabels();
     $("vehicleTypeField").hidden = !valueOf("vehicleCategory");
     $("vehicleOtherField").hidden = $("vehicleTypeField").hidden || $("vehicleType").value !== "Other";
     var items = allItems();
@@ -390,7 +401,7 @@
     var fields = [
       [$("vehicleType"), "Please choose the vehicle type."],
       [$("vehicleOther"), "Please " + otherLabel().charAt(0).toLowerCase() + otherLabel().slice(1) + ".", $("vehicleType").value === "Other"],
-      [$("unit"), "Please enter the unit / vehicle #."],
+      [$("unit"), "Please enter the " + unitLabel().toLowerCase() + "."],
     ];
     for (var k = 0; k < fields.length; k++) {
       var f = fields[k];
@@ -492,7 +503,7 @@
     var details = [
       ["Company", company],
       ["Vehicle type", vehicleTypeText()],
-      ["Unit / vehicle #", unit],
+      [unitLabel(), unit],
       ["Vehicle operator" + (operators.length > 1 ? "s" : ""), operatorNames],
       ["Odometer / hours", $("odometer").value.trim()],
       ["Site / route", $("site").value.trim()],

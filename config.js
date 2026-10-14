@@ -32,6 +32,11 @@ window.APP_CONFIG = {
     Truck: "Describe your vehicle",
     Machine: "Describe your machine",
   },
+  // Label for the unit number box.
+  unitLabels: {
+    Truck: "Unit / vehicle #",
+    Machine: "Unit / machine number",
+  },
   vehicleTypes: {
     Truck: [
       "Pickup with Plow",
