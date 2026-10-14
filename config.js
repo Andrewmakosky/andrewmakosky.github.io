@@ -7,6 +7,9 @@ window.APP_CONFIG = {
   // Name shown at the top of the app and on the PDF report.
   companyName: "Creative Snow by Cowbay",
 
+  // Title shown under the logo at the top of the app.
+  appTitle: "Creative Snow Vehicle Inspection Checklist",
+
   // Where completed reports are emailed. Separate multiple addresses with commas.
   reportEmail: "andrew.makosky@cowbaycontracting.com, patricia.vallejo@cowbaycontracting.com, mark.dalonzo@cowbaycontracting.com, brian.dalonzo@cowbaycontracting.com, ddalonzo@cowbaycontracting.com",
 
