@@ -506,7 +506,7 @@
       [unitLabel(), unit],
       ["Vehicle operator" + (operators.length > 1 ? "s" : ""), operatorNames],
       ["Odometer", $("odometer").value.trim()],
-      ["Site / route", $("site").value.trim()],
+      ["Site / route assigned", $("site").value.trim()],
       ["Inspector", inspector],
       ["Date", when],
       ["Safe to operate", safe],
