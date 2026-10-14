@@ -12,6 +12,7 @@ var FILES = [
   "config.js",
   "version.js",
   "manifest.webmanifest",
+  "images/logo.jpg",
   "icons/icon.svg",
   "icons/icon-180.png",
   "icons/icon-192.png",
