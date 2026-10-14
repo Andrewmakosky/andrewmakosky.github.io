@@ -27,6 +27,11 @@ window.APP_CONFIG = {
     Truck: "Type of Vehicle",
     Machine: "Type of Machine",
   },
+  // Label for the box that appears when "Other" is picked.
+  vehicleOtherLabels: {
+    Truck: "Describe your vehicle",
+    Machine: "Describe your machine",
+  },
   vehicleTypes: {
     Truck: [
       "Pickup with Plow",
