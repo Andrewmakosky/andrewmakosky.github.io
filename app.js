@@ -298,6 +298,11 @@
     });
     sel.value = list.indexOf(keep) >= 0 ? keep : "";
     $("vehicleTypeLabel").textContent = (CFG.vehicleTypeLabels || {})[cat] || "Type of " + cat;
+    $("vehicleOtherLabel").textContent = otherLabel();
+  }
+
+  function otherLabel() {
+    return (CFG.vehicleOtherLabels || {})[valueOf("vehicleCategory")] || "Describe your vehicle";
   }
 
   function vehicleTypeText() {
@@ -384,7 +389,7 @@
 
     var fields = [
       [$("vehicleType"), "Please choose the vehicle type."],
-      [$("vehicleOther"), "Please describe your vehicle.", $("vehicleType").value === "Other"],
+      [$("vehicleOther"), "Please " + otherLabel().charAt(0).toLowerCase() + otherLabel().slice(1) + ".", $("vehicleType").value === "Other"],
       [$("unit"), "Please enter the unit / vehicle #."],
     ];
     for (var k = 0; k < fields.length; k++) {
