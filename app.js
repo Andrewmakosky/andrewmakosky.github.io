@@ -53,7 +53,7 @@
   function itemDef(x) { return typeof x === "string" ? { name: x } : x; }
 
   function build() {
-    if (CFG.companyName) $("brandName").textContent = CFG.companyName;
+    if (CFG.appTitle) $("brandName").textContent = CFG.appTitle;
 
     var sel = $("vehicleType");
     sel.innerHTML = '<option value="">Select…</option>';
