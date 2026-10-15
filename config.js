@@ -61,7 +61,9 @@ window.APP_CONFIG = {
   // Each section has a number shown in its heading (e.g. "5a"); keep them
   // unique, since saved answers and photos are tied to them.
   // A section or item with onlyFor: "Truck" or "Machine" only appears for
-  // that vehicle type.
+  // that vehicle type. An item with passInput: "Label" asks for a value when
+  // answered Pass (passMultiline for a bigger box, passInDetails to also show
+  // it at the top of the report).
   // An item can also be { name: "...", passInput: "Label" }: answering Pass
   // then shows a required box with that label (e.g. the GPS ID number).
   checklist: [
@@ -165,12 +167,17 @@ window.APP_CONFIG = {
       number: "9",
       section: "Cow Bay Requirements",
       items: [
-        "Cow Bay signage and site ID displayed",
         "2026-2027 inspection decal installed",
-        "GPS installed, working, and confirmed with dispatch",
-        "Driver and emergency contact info submitted",
-        "Vehicle assigned to a site/route",
-        "Driver has supervisor and dispatch contacts",
+        {
+          name: "Driver and emergency contact info submitted",
+          passInput: "Driver and emergency contact info (names and phone numbers)",
+          passMultiline: true,
+        },
+        {
+          name: "Driver Supervisor Contact Information",
+          passInput: "Supervisor name and phone number",
+          passMultiline: true,
+        },
         "Driver knows sign-in/out, dispatch, and accident reporting",
       ],
     },
@@ -182,7 +189,7 @@ window.APP_CONFIG = {
         "Plow: raise, lower, angle",
         "Spreader running",
         "Warning lights and backup alarm",
-        { name: "GPS signal verified", passInput: "GPS ID number" },
+        { name: "GPS signal verified", passInput: "GPS ID number", passInDetails: true },
       ],
     },
   ],
