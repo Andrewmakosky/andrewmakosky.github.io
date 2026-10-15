@@ -2,7 +2,7 @@
   "use strict";
 
   var CFG = window.APP_CONFIG || {};
-  var DRAFT_KEY = "checklist-draft-v4";
+  var DRAFT_KEY = "checklist-draft-v5";
   var INSPECTOR_KEY = "checklist-inspector";
   var PHOTO_MAX = 1280;      // longest side, px
   var PHOTO_QUALITY = 0.7;   // JPEG quality
@@ -102,7 +102,10 @@
           '</div>' +
           (def.passInput
             ? '<label class="item-pass" hidden><span class="label"></span>' +
-                '<input name="' + id + '_pass" autocomplete="off" autocapitalize="characters"></label>'
+                (def.passMultiline
+                  ? '<textarea name="' + id + '_pass" rows="3" autocomplete="off"></textarea>'
+                  : '<input name="' + id + '_pass" autocomplete="off" autocapitalize="characters">') +
+              '</label>'
             : '') +
           '<div class="photos" data-photos="' + id + '"></div>';
         item.querySelector(".item-name").textContent = name;
@@ -130,7 +133,7 @@
       sec.items.forEach(function (x, j) {
         var def = itemDef(x);
         if (!sectionActive(def)) return;
-        out.push({ section: sec.section, name: def.name, passInput: def.passInput, id: itemId(sec, i, j) });
+        out.push({ section: sec.section, name: def.name, passInput: def.passInput, passInDetails: def.passInDetails, id: itemId(sec, i, j) });
       });
     });
     return out;
@@ -468,7 +471,7 @@
     if (noPassValue) {
       var passInput = form.elements[noPassValue.id + "_pass"];
       passInput.classList.add("invalid");
-      showError("Please enter the " + noPassValue.passInput + " for: " + noPassValue.name, passInput);
+      showError("Please fill in: " + noPassValue.passInput, passInput);
       return false;
     }
 
@@ -530,7 +533,7 @@
     ];
     // Values asked for on Pass (e.g. the GPS ID number) also go up top.
     items.forEach(function (it) {
-      if (it.passInput && valueOf(it.id) === "Pass") details.push([it.passInput, form.elements[it.id + "_pass"].value.trim()]);
+      if (it.passInDetails && valueOf(it.id) === "Pass") details.push([it.passInput, form.elements[it.id + "_pass"].value.trim()]);
     });
 
     var sections = [];
