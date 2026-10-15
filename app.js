@@ -2,7 +2,7 @@
   "use strict";
 
   var CFG = window.APP_CONFIG || {};
-  var DRAFT_KEY = "checklist-draft-v2";
+  var DRAFT_KEY = "checklist-draft-v3";
   var INSPECTOR_KEY = "checklist-inspector";
   var PHOTO_MAX = 1280;      // longest side, px
   var PHOTO_QUALITY = 0.7;   // JPEG quality
@@ -47,7 +47,13 @@
   }
 
   // ---------- build the form ----------
-  function itemId(i, j) { return "c" + i + "_" + j; }
+  function secNumber(sec, i) { return sec.number || String(i + 1); }
+  function itemId(sec, i, j) { return "s" + secNumber(sec, i) + "_" + j; }
+
+  // Sections marked onlyFor: "Truck" / "Machine" apply only to that category.
+  function sectionActive(sec) {
+    return !sec.onlyFor || sec.onlyFor === valueOf("vehicleCategory");
+  }
 
   // Checklist items are a name, or { name, passInput } to ask for a value on Pass.
   function itemDef(x) { return typeof x === "string" ? { name: x } : x; }
@@ -68,14 +74,15 @@
     (CFG.checklist || []).forEach(function (sec, i) {
       var card = document.createElement("section");
       card.className = "card";
+      card.dataset.section = i;
       var h = document.createElement("h2");
-      h.textContent = (i + 1) + ". " + sec.section;
+      h.textContent = secNumber(sec, i) + ". " + sec.section;
       card.appendChild(h);
 
       sec.items.forEach(function (x, j) {
         var def = itemDef(x);
         var name = def.name;
-        var id = itemId(i, j);
+        var id = itemId(sec, i, j);
         var item = document.createElement("div");
         item.className = "item";
         item.dataset.id = id;
@@ -118,9 +125,10 @@
   function allItems() {
     var out = [];
     (CFG.checklist || []).forEach(function (sec, i) {
+      if (!sectionActive(sec)) return;
       sec.items.forEach(function (x, j) {
         var def = itemDef(x);
-        out.push({ section: sec.section, name: def.name, passInput: def.passInput, id: itemId(i, j) });
+        out.push({ section: sec.section, name: def.name, passInput: def.passInput, id: itemId(sec, i, j) });
       });
     });
     return out;
@@ -326,6 +334,9 @@
     updateLabels();
     $("vehicleTypeField").hidden = !valueOf("vehicleCategory");
     $("vehicleOtherField").hidden = $("vehicleTypeField").hidden || $("vehicleType").value !== "Other";
+    (CFG.checklist || []).forEach(function (sec, i) {
+      form.querySelector('.card[data-section="' + i + '"]').hidden = !sectionActive(sec);
+    });
     var items = allItems();
     var done = 0;
     items.forEach(function (it) {
@@ -516,12 +527,14 @@
       if (it.passInput && valueOf(it.id) === "Pass") details.push([it.passInput, form.elements[it.id + "_pass"].value.trim()]);
     });
 
-    var sections = (CFG.checklist || []).map(function (sec, i) {
-      return {
-        name: (i + 1) + ". " + sec.section,
+    var sections = [];
+    (CFG.checklist || []).forEach(function (sec, i) {
+      if (!sectionActive(sec)) return;
+      sections.push({
+        name: secNumber(sec, i) + ". " + sec.section,
         items: sec.items.map(function (x, j) {
           var def = itemDef(x);
-          var id = itemId(i, j);
+          var id = itemId(sec, i, j);
           var result = valueOf(id);
           var passValue = def.passInput && result === "Pass" ? form.elements[id + "_pass"].value.trim() : "";
           return {
@@ -532,7 +545,7 @@
             photos: photos[id] || [],
           };
         }),
-      };
+      });
     });
 
     // Plain-text summary for the email body.
@@ -553,7 +566,12 @@
       L.push("NOTES");
       L.push("  " + $("notes").value.trim());
     }
-    var photoCount = Object.keys(photos).reduce(function (n, k) { return n + photos[k].length; }, 0);
+    // Only photos that end up in the report (not ones on hidden sections).
+    var photoCount = ["vehicle", "notes"].concat(operators.map(function (o) { return o.id; }))
+      .reduce(function (n, k) { return n + (photos[k] || []).length; }, 0) +
+      sections.reduce(function (n, sec) {
+        return n + sec.items.reduce(function (m, it) { return m + it.photos.length; }, 0);
+      }, 0);
     var licenseCount = operators.reduce(function (n, o) { return n + (photos[o.id] || []).length; }, 0);
     if (operators.length) L.push("License photos: " + licenseCount + " (in PDF)");
     var safeUnit = unit.replace(/[^A-Za-z0-9-]+/g, "-").replace(/^-+|-+$/g, "") || "vehicle";

@@ -58,10 +58,15 @@ window.APP_CONFIG = {
   },
 
   // The checklist. Add, remove or rename sections and items freely.
+  // Each section has a number shown in its heading (e.g. "5a"); keep them
+  // unique, since saved answers and photos are tied to them.
+  // A section with onlyFor: "Truck" or "Machine" only appears for that
+  // vehicle type.
   // An item can also be { name: "...", passInput: "Label" }: answering Pass
   // then shows a required box with that label (e.g. the GPS ID number).
   checklist: [
     {
+      number: "1",
       section: "Paperwork",
       items: [
         "Registration in vehicle",
@@ -70,6 +75,7 @@ window.APP_CONFIG = {
       ],
     },
     {
+      number: "2",
       section: "Engine & Fluids",
       items: [
         "Starts and runs with no warning lights",
@@ -80,6 +86,7 @@ window.APP_CONFIG = {
       ],
     },
     {
+      number: "3",
       section: "Tires & Brakes",
       items: [
         "Tires have good tread, correct pressure, no damage",
@@ -89,6 +96,7 @@ window.APP_CONFIG = {
       ],
     },
     {
+      number: "4",
       section: "Lights & Electrical",
       items: [
         "Headlights (high and low), tail, brake, reverse, plate lights",
@@ -100,17 +108,30 @@ window.APP_CONFIG = {
       ],
     },
     {
-      section: "Plow",
+      number: "5a",
+      section: "Truck Plow",
+      onlyFor: "Truck",
       items: [
         "Mounted securely; frame and welds not cracked",
         "Cutting edge and shoes in good condition",
-        "Hydraulic hoses and fittings tight, no leaks; fluid level OK",
-        "Raises, lowers, and angles left/right",
-        "Controller and wiring work",
-        "Plow markers installed",
+        "Hydraulic hoses and fittings tight, no leaks, fluid levels acceptable",
+        "Raises, lowers, and angles left/right operational",
+        "Controller and wiring operational",
       ],
     },
     {
+      number: "5b",
+      section: "Machine Push Box",
+      onlyFor: "Machine",
+      items: [
+        "Mounted and locked on coupler",
+        "Frame, side plates, and welds not cracked",
+        "Cutting edge (rubber or steel) in good condition",
+        "Side wear shoes/skid in good condition",
+      ],
+    },
+    {
+      number: "6",
       section: "Salt Spreader",
       items: [
         "Mounted securely; hopper solid, no missing parts or guards",
@@ -121,6 +142,7 @@ window.APP_CONFIG = {
       ],
     },
     {
+      number: "7",
       section: "Cab & Visibility",
       items: [
         "Windshield free of major cracks",
@@ -130,6 +152,7 @@ window.APP_CONFIG = {
       ],
     },
     {
+      number: "8",
       section: "Safety Equipment On Board",
       items: [
         "Fire extinguisher (charged and mounted)",
@@ -138,6 +161,7 @@ window.APP_CONFIG = {
       ],
     },
     {
+      number: "9",
       section: "Cow Bay Requirements",
       items: [
         "Cow Bay signage and site ID displayed",
@@ -150,6 +174,7 @@ window.APP_CONFIG = {
       ],
     },
     {
+      number: "10",
       section: "Road & Function Test",
       items: [
         "Road test: brakes and steering",
