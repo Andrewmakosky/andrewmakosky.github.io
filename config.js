@@ -60,8 +60,8 @@ window.APP_CONFIG = {
   // The checklist. Add, remove or rename sections and items freely.
   // Each section has a number shown in its heading (e.g. "5a"); keep them
   // unique, since saved answers and photos are tied to them.
-  // A section with onlyFor: "Truck" or "Machine" only appears for that
-  // vehicle type.
+  // A section or item with onlyFor: "Truck" or "Machine" only appears for
+  // that vehicle type.
   // An item can also be { name: "...", passInput: "Label" }: answering Pass
   // then shows a required box with that label (e.g. the GPS ID number).
   checklist: [
@@ -143,8 +143,9 @@ window.APP_CONFIG = {
     },
     {
       number: "7",
-      section: "Cab & Visibility",
+      section: "Cab, Visibility & Safety",
       items: [
+        { name: "ROPS/Cab Frame undamaged", onlyFor: "Machine" },
         "Windshield free of major cracks",
         "Mirrors secure and adjusted; rear view clear",
         "Seat belts, seat, doors, and locks work",

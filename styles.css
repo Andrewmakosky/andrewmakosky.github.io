@@ -105,7 +105,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--focus); out
 
 /* Checklist items */
 .item { padding: 12px 0; border-top: 1px solid var(--line); }
-.item:first-of-type { border-top: 0; padding-top: 0; }
+.item:first-of-type,
+h2 + .item[hidden] + .item { border-top: 0; padding-top: 0; }
 .item-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
 .item-name { font-weight: 600; padding-top: 6px; }
 .item.missing .item-name { color: var(--fail); }
