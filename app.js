@@ -2,7 +2,7 @@
   "use strict";
 
   var CFG = window.APP_CONFIG || {};
-  var DRAFT_KEY = "checklist-draft-v5";
+  var DRAFT_KEY = "checklist-draft-v6";
   var INSPECTOR_KEY = "checklist-inspector";
   var PHOTO_MAX = 1280;      // longest side, px
   var PHOTO_QUALITY = 0.7;   // JPEG quality
@@ -100,7 +100,12 @@
           '<div class="item-note" hidden>' +
             '<input name="' + id + '_note" placeholder="What failed?" aria-label="What failed?">' +
           '</div>' +
-          (def.passInput
+          (def.passContacts
+            ? '<div class="item-pass" hidden><span class="label"></span>' +
+                '<div class="contacts" data-contacts="' + id + '"></div>' +
+                '<button type="button" class="btn ghost small" data-add-contact="' + id + '">+ Add additional contact information</button>' +
+              '</div>'
+            : def.passInput
             ? '<label class="item-pass" hidden><span class="label"></span>' +
                 (def.passMultiline
                   ? '<textarea name="' + id + '_pass" rows="3" autocomplete="off"></textarea>'
@@ -110,6 +115,7 @@
           '<div class="photos" data-photos="' + id + '"></div>';
         item.querySelector(".item-name").textContent = name;
         if (def.passInput) item.querySelector(".item-pass .label").textContent = def.passInput;
+        if (def.passContacts) addContact(item.querySelector(".contacts"));
         item.querySelector(".seg").setAttribute("aria-label", name);
         item.querySelector(".photo-btn").setAttribute("aria-label", "Add photo: " + name);
         card.appendChild(item);
@@ -133,7 +139,7 @@
       sec.items.forEach(function (x, j) {
         var def = itemDef(x);
         if (!sectionActive(def)) return;
-        out.push({ section: sec.section, name: def.name, passInput: def.passInput, passInDetails: def.passInDetails, id: itemId(sec, i, j) });
+        out.push({ section: sec.section, name: def.name, passInput: def.passInput, passContacts: def.passContacts, passInDetails: def.passInDetails, id: itemId(sec, i, j) });
       });
     });
     return out;
@@ -142,6 +148,53 @@
   function valueOf(name) {
     var el = form.querySelector('input[name="' + name + '"]:checked');
     return el ? el.value : "";
+  }
+
+  // ---------- contacts (name + number rows on some items) ----------
+  function addContact(box, name, phone) {
+    var row = document.createElement("div");
+    row.className = "contact-row";
+    row.innerHTML =
+      '<input class="ct-name" name="ct_name" placeholder="Contact Name" aria-label="Contact name" autocomplete="off">' +
+      '<input class="ct-phone" name="ct_phone" type="tel" inputmode="tel" placeholder="Contact Number" aria-label="Contact number" autocomplete="off">' +
+      '<button type="button" class="op-remove" aria-label="Remove contact">×</button>';
+    row.querySelector(".ct-name").value = name || "";
+    row.querySelector(".ct-phone").value = phone || "";
+    row.querySelector(".op-remove").addEventListener("click", function () {
+      row.remove();
+      updateContactButtons(box);
+      saveDraft();
+    });
+    box.appendChild(row);
+    updateContactButtons(box);
+    return row;
+  }
+
+  function updateContactButtons(box) {
+    var rows = box.querySelectorAll(".contact-row");
+    rows.forEach(function (r) { r.querySelector(".op-remove").hidden = rows.length < 2; });
+  }
+
+  function contactBoxes() { return form.querySelectorAll("[data-contacts]"); }
+
+  function getContacts(id) {
+    var box = form.querySelector('[data-contacts="' + id + '"]');
+    return Array.prototype.map.call(box.querySelectorAll(".contact-row"), function (r) {
+      return { name: r.querySelector(".ct-name").value.trim(), phone: r.querySelector(".ct-phone").value.trim() };
+    });
+  }
+
+  function resetContacts(saved) {
+    contactBoxes().forEach(function (box) {
+      var list = (saved && saved[box.dataset.contacts]) || [{}];
+      box.innerHTML = "";
+      list.forEach(function (c) { addContact(box, c.name, c.phone); });
+    });
+  }
+
+  function contactsText(id) {
+    return getContacts(id).filter(function (c) { return c.name || c.phone; })
+      .map(function (c) { return c.name + " - " + c.phone; }).join("\n");
   }
 
   // ---------- operators ----------
@@ -364,12 +417,14 @@
     var data = {};
     Array.prototype.forEach.call(form.elements, function (el) {
       var key = el.name || el.id;
-      if (!key || el.type === "file" || key.indexOf("op_") === 0) return;
+      if (!key || el.type === "file" || key.indexOf("op_") === 0 || key.indexOf("ct_") === 0) return;
       if (el.type === "radio") { if (el.checked) data[key] = el.value; }
       else if (el.type === "checkbox") data[key] = el.checked;
       else data[key] = el.value;
     });
     data.operators = getOperators();
+    data.contacts = {};
+    contactBoxes().forEach(function (box) { data.contacts[box.dataset.contacts] = getContacts(box.dataset.contacts); });
     store(DRAFT_KEY, data);
     if ($("inspector").value.trim()) store(INSPECTOR_KEY, $("inspector").value.trim());
   }
@@ -377,6 +432,7 @@
   function restoreDraft() {
     var data = load(DRAFT_KEY);
     resetOperators(data && data.operators);
+    resetContacts(data && data.contacts);
     if (data) {
       Array.prototype.forEach.call(form.elements, function (el) {
         var key = el.name || el.id;
@@ -465,8 +521,30 @@
       return false;
     }
 
+    var contactItems = allItems().filter(function (it) { return it.passContacts && valueOf(it.id) === "Pass"; });
+    for (var c = 0; c < contactItems.length; c++) {
+      var box = form.querySelector('[data-contacts="' + contactItems[c].id + '"]');
+      var rows = box.querySelectorAll(".contact-row");
+      var complete = 0;
+      for (var r = 0; r < rows.length; r++) {
+        var nm = rows[r].querySelector(".ct-name"), ph = rows[r].querySelector(".ct-phone");
+        if (nm.value.trim() && ph.value.trim()) { complete++; continue; }
+        if (nm.value.trim() || ph.value.trim()) {
+          var empty = nm.value.trim() ? ph : nm;
+          empty.classList.add("invalid");
+          showError("Please enter both a contact name and number.", empty);
+          return false;
+        }
+      }
+      if (!complete) {
+        rows[0].querySelector(".ct-name").classList.add("invalid");
+        showError("Please add at least one contact for: " + contactItems[c].name, rows[0].querySelector(".ct-name"));
+        return false;
+      }
+    }
+
     var noPassValue = allItems().filter(function (it) {
-      return it.passInput && valueOf(it.id) === "Pass" && !form.elements[it.id + "_pass"].value.trim();
+      return it.passInput && !it.passContacts && valueOf(it.id) === "Pass" && !form.elements[it.id + "_pass"].value.trim();
     })[0];
     if (noPassValue) {
       var passInput = form.elements[noPassValue.id + "_pass"];
@@ -546,12 +624,14 @@
           if (!sectionActive(def)) return null;
           var id = itemId(sec, i, j);
           var result = valueOf(id);
-          var passValue = def.passInput && result === "Pass" ? form.elements[id + "_pass"].value.trim() : "";
+          var passValue = !def.passInput || result !== "Pass" ? ""
+            : def.passContacts ? contactsText(id)
+            : form.elements[id + "_pass"].value.trim();
           return {
             name: def.name,
             result: result,
             note: result === "Fail" ? form.elements[id + "_note"].value.trim() : "",
-            detail: passValue ? def.passInput + ": " + passValue : "",
+            detail: !passValue ? "" : def.passContacts ? def.passInput + ":\n" + passValue : def.passInput + ": " + passValue,
             photos: photos[id] || [],
           };
         }).filter(Boolean),
@@ -787,6 +867,7 @@
     photos = {};
     savePhotos();
     resetOperators();
+    resetContacts();
     extraInputs().forEach(function (el, i) { el.hidden = i > 0; });
     updateAddEmailBtn();
     renderAllPhotos();
@@ -809,7 +890,10 @@
     refresh();
     saveDraft();
   });
-  form.addEventListener("input", saveDraft);
+  form.addEventListener("input", function (e) {
+    e.target.classList.remove("invalid");
+    saveDraft();
+  });
   form.addEventListener("submit", onSubmit);
 
   form.addEventListener("click", function (e) {
@@ -828,6 +912,14 @@
     var next = Array.prototype.filter.call(extraInputs(), function (el) { return el.hidden; })[0];
     if (next) { next.hidden = false; next.focus(); }
     updateAddEmailBtn();
+  });
+
+  form.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-add-contact]");
+    if (!b) return;
+    var row = addContact(form.querySelector('[data-contacts="' + b.dataset.addContact + '"]'));
+    row.querySelector(".ct-name").focus();
+    saveDraft();
   });
 
   $("addOperatorBtn").addEventListener("click", function () {
