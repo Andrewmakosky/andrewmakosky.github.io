@@ -2,7 +2,7 @@
   "use strict";
 
   var CFG = window.APP_CONFIG || {};
-  var DRAFT_KEY = "checklist-draft-v3";
+  var DRAFT_KEY = "checklist-draft-v4";
   var INSPECTOR_KEY = "checklist-inspector";
   var PHOTO_MAX = 1280;      // longest side, px
   var PHOTO_QUALITY = 0.7;   // JPEG quality
@@ -50,12 +50,13 @@
   function secNumber(sec, i) { return sec.number || String(i + 1); }
   function itemId(sec, i, j) { return "s" + secNumber(sec, i) + "_" + j; }
 
-  // Sections marked onlyFor: "Truck" / "Machine" apply only to that category.
+  // Sections and items marked onlyFor: "Truck" / "Machine" apply only to that category.
   function sectionActive(sec) {
     return !sec.onlyFor || sec.onlyFor === valueOf("vehicleCategory");
   }
 
-  // Checklist items are a name, or { name, passInput } to ask for a value on Pass.
+  // Checklist items are a name, or { name, passInput, onlyFor }.
+  // passInput asks for a value on Pass; onlyFor limits it to a category.
   function itemDef(x) { return typeof x === "string" ? { name: x } : x; }
 
   function build() {
@@ -128,6 +129,7 @@
       if (!sectionActive(sec)) return;
       sec.items.forEach(function (x, j) {
         var def = itemDef(x);
+        if (!sectionActive(def)) return;
         out.push({ section: sec.section, name: def.name, passInput: def.passInput, id: itemId(sec, i, j) });
       });
     });
@@ -335,7 +337,11 @@
     $("vehicleTypeField").hidden = !valueOf("vehicleCategory");
     $("vehicleOtherField").hidden = $("vehicleTypeField").hidden || $("vehicleType").value !== "Other";
     (CFG.checklist || []).forEach(function (sec, i) {
-      form.querySelector('.card[data-section="' + i + '"]').hidden = !sectionActive(sec);
+      var card = form.querySelector('.card[data-section="' + i + '"]');
+      card.hidden = !sectionActive(sec);
+      sec.items.forEach(function (x, j) {
+        card.querySelector('.item[data-id="' + itemId(sec, i, j) + '"]').hidden = !sectionActive(itemDef(x));
+      });
     });
     var items = allItems();
     var done = 0;
@@ -534,6 +540,7 @@
         name: secNumber(sec, i) + ". " + sec.section,
         items: sec.items.map(function (x, j) {
           var def = itemDef(x);
+          if (!sectionActive(def)) return null;
           var id = itemId(sec, i, j);
           var result = valueOf(id);
           var passValue = def.passInput && result === "Pass" ? form.elements[id + "_pass"].value.trim() : "";
@@ -544,7 +551,7 @@
             detail: passValue ? def.passInput + ": " + passValue : "",
             photos: photos[id] || [],
           };
-        }),
+        }).filter(Boolean),
       });
     });
 
