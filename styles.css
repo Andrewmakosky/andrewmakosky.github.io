@@ -217,4 +217,15 @@ h2 + .item[hidden] + .item { border-top: 0; padding-top: 0; }
   font-size: 24px; line-height: 1; cursor: pointer;
 }
 .btn.small { min-height: 46px; padding: 8px 12px; font-size: 16px; }
+
+/* Contact name + number rows */
+.contacts { display: grid; gap: 8px; margin-bottom: 8px; }
+.contact-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px; align-items: center; }
+.contact-row input { min-width: 0; padding: 10px; font-size: 16px; }
+.contact-row .op-remove { width: 40px; }
+.contact-row .op-remove[hidden] { display: block !important; visibility: hidden; }
+@media (max-width: 360px) {
+  .contact-row { grid-template-columns: 1fr auto; }
+  .contact-row .ct-phone { grid-column: 1; }
+}
 #recipientText { white-space: pre-line; font-size: 14px; }

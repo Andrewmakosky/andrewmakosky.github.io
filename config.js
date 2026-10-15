@@ -62,8 +62,8 @@ window.APP_CONFIG = {
   // unique, since saved answers and photos are tied to them.
   // A section or item with onlyFor: "Truck" or "Machine" only appears for
   // that vehicle type. An item with passInput: "Label" asks for a value when
-  // answered Pass (passMultiline for a bigger box, passInDetails to also show
-  // it at the top of the report).
+  // answered Pass (passMultiline for a bigger box, passContacts for contact
+  // name + number rows, passInDetails to also show it at the top of the report).
   // An item can also be { name: "...", passInput: "Label" }: answering Pass
   // then shows a required box with that label (e.g. the GPS ID number).
   checklist: [
@@ -170,13 +170,13 @@ window.APP_CONFIG = {
         "2026-2027 inspection decal installed",
         {
           name: "Driver and emergency contact info submitted",
-          passInput: "Driver and emergency contact info (names and phone numbers)",
-          passMultiline: true,
+          passInput: "Driver and emergency contacts",
+          passContacts: true,
         },
         {
           name: "Driver Supervisor Contact Information",
-          passInput: "Supervisor name and phone number",
-          passMultiline: true,
+          passInput: "Supervisor contacts",
+          passContacts: true,
         },
         "Driver knows sign-in/out, dispatch, and accident reporting",
       ],
