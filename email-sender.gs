@@ -1,10 +1,17 @@
 /**
- * Creative Snow by Cowbay — inspection report email sender.
+ * Creative Snow by Cowbay — inspection report email sender and archive.
  *
  * Paste this into a Google Apps Script project and deploy it as a Web app
  * (see "Automatic emailing" in README.md). The checklist app posts each
- * finished report here, and this script emails it with the PDF attached
- * from the Google account that deploys it.
+ * finished report here. This script:
+ *   - emails it with the PDF attached, from the Google account that deploys it;
+ *   - saves the PDF in a Google Drive folder and logs it in a Google Sheet;
+ *   - lets the app list saved reports (and open their PDFs) on any device,
+ *     for people who know VIEW_PASSCODE.
+ *
+ * After pasting a new version, run setup() once from the editor (to grant
+ * Drive and Sheets access), then Deploy > Manage deployments > edit >
+ * Version: New version > Deploy.
  */
 
 // Every report goes to these addresses. Separate multiple addresses with commas.
@@ -17,8 +24,19 @@ var SENDER_NAME = "Creative Snow Inspections";
 // who else it went to, so anything sent outside is always visible here.
 var MAX_EXTRA = 3;
 
+// Passcode for viewing all saved reports in the app's "Sent reports" tab.
+// Reports include license photos and phone numbers, so pick something that
+// isn't easy to guess. Leave blank to turn shared viewing off.
+var VIEW_PASSCODE = "";
+
+// Names of the Drive folder and Sheet created by setup().
+var FOLDER_NAME = "Inspection Reports";
+var SHEET_NAME = "Inspection Reports Log";
+
 // Bumped when the script changes, so the app can tell which version is live.
-var SCRIPT_VERSION = 2;
+var SCRIPT_VERSION = 3;
+
+var LOG_HEADERS = ["Submitted", "Unit", "Company", "Vehicle type", "Result", "Inspector", "Subject", "PDF link", "File ID", "Kind"];
 
 function doPost(e) {
   try {
@@ -50,16 +68,120 @@ function doPost(e) {
         attachments: [pdf],
       });
     }
-    return json({ ok: true, extraSent: extras.length, version: SCRIPT_VERSION });
+
+    // The email already went out, so a problem saving the copy doesn't fail the send.
+    var archived = false;
+    try {
+      archiveReport(pdf, subject, d.meta || {});
+      archived = true;
+    } catch (archiveErr) {
+      console.error("Archive failed: " + archiveErr);
+    }
+    return json({ ok: true, extraSent: extras.length, archived: archived, version: SCRIPT_VERSION });
   } catch (err) {
     return json({ ok: false, error: String(err && err.message || err) });
   }
 }
 
-// Open the Web app URL in a browser to check it's deployed and see who the
-// live version emails. If sendsTo is out of date, deploy a New version.
-function doGet() {
-  return json({ ok: true, message: "Inspection email sender is running.", sendsTo: REPORT_TO, version: SCRIPT_VERSION });
+// GET with no action: status check. action=list / action=pdf need the passcode.
+function doGet(e) {
+  var p = (e && e.parameter) || {};
+  if (p.action === "list" || p.action === "pdf") {
+    if (!VIEW_PASSCODE) return json({ ok: false, error: "Shared reports are turned off (no VIEW_PASSCODE set)." });
+    if (p.passcode !== VIEW_PASSCODE) return json({ ok: false, error: "Wrong passcode." });
+    try {
+      return p.action === "list" ? json({ ok: true, reports: listReports() }) : json(getPdf(p.id));
+    } catch (err) {
+      return json({ ok: false, error: String(err && err.message || err) });
+    }
+  }
+  return json({
+    ok: true,
+    message: "Inspection email sender is running.",
+    sendsTo: REPORT_TO,
+    version: SCRIPT_VERSION,
+    sharing: !!VIEW_PASSCODE,
+  });
+}
+
+// Run once from the editor: creates the folder and sheet, and grants access.
+function setup() {
+  var folder = getFolder();
+  var sheet = getSheet();
+  Logger.log("Reports folder: " + folder.getUrl());
+  Logger.log("Reports log: " + sheet.getParent().getUrl());
+}
+
+function archiveReport(pdf, subject, meta) {
+  var file = getFolder().createFile(pdf);
+  getSheet().appendRow([
+    meta.createdAt ? new Date(meta.createdAt) : new Date(),
+    String(meta.unit || ""),
+    String(meta.company || ""),
+    String(meta.vehicleType || ""),
+    String(meta.result || ""),
+    String(meta.inspector || ""),
+    subject,
+    file.getUrl(),
+    file.getId(),
+    String(meta.kind || ""),
+  ]);
+}
+
+function listReports() {
+  var sheet = getSheet();
+  var rows = sheet.getLastRow() - 1;
+  if (rows < 1) return [];
+  var first = Math.max(2, sheet.getLastRow() - 499);   // newest 500
+  var values = sheet.getRange(first, 1, sheet.getLastRow() - first + 1, LOG_HEADERS.length).getValues();
+  return values.reverse().map(function (r) {
+    return {
+      createdAt: r[0] instanceof Date ? r[0].toISOString() : String(r[0]),
+      unit: r[1], company: r[2], vehicleType: r[3], result: r[4],
+      inspector: r[5], subject: r[6], id: r[8], kind: r[9],
+    };
+  });
+}
+
+function getPdf(id) {
+  var file = DriveApp.getFileById(String(id || ""));
+  // Only hand out files that live in the reports folder.
+  var inFolder = false;
+  var parents = file.getParents();
+  var folderId = getFolder().getId();
+  while (parents.hasNext()) if (parents.next().getId() === folderId) inFolder = true;
+  if (!inFolder) throw new Error("Not a saved report.");
+  return {
+    ok: true,
+    filename: file.getName(),
+    pdfBase64: Utilities.base64Encode(file.getBlob().getBytes()),
+  };
+}
+
+function getFolder() {
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty("folderId");
+  if (id) {
+    try { return DriveApp.getFolderById(id); } catch (e) { /* recreate below */ }
+  }
+  var folder = DriveApp.createFolder(FOLDER_NAME);
+  props.setProperty("folderId", folder.getId());
+  return folder;
+}
+
+function getSheet() {
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty("sheetId");
+  if (id) {
+    try { return SpreadsheetApp.openById(id).getSheets()[0]; } catch (e) { /* recreate below */ }
+  }
+  var ss = SpreadsheetApp.create(SHEET_NAME);
+  var sheet = ss.getSheets()[0];
+  sheet.appendRow(LOG_HEADERS);
+  sheet.setFrozenRows(1);
+  DriveApp.getFileById(ss.getId()).moveTo(getFolder());
+  props.setProperty("sheetId", ss.getId());
+  return sheet;
 }
 
 // Keeps only well-formed, unique addresses, at most MAX_EXTRA of them.
