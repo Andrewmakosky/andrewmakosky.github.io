@@ -179,16 +179,6 @@ window.APP_CONFIG = {
           passContacts: true,
         },
         "Driver knows sign-in/out, dispatch, and accident reporting",
-      ],
-    },
-    {
-      number: "10",
-      section: "Road & Function Test",
-      items: [
-        "Road test: brakes and steering",
-        "Plow: raise, lower, angle",
-        "Spreader running",
-        "Warning lights and backup alarm",
         { name: "GPS signal verified", passInput: "GPS ID number", passInDetails: true },
       ],
     },
