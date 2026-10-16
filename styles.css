@@ -136,7 +136,9 @@ h2 + .item[hidden] + .item { border-top: 0; padding-top: 0; }
 .seg input[value="Fail"]:checked + span,
 .seg input[value="No"]:checked + span { background: var(--fail-bg); border-color: var(--fail); color: var(--fail); }
 .seg.choice input:checked + span { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
-.seg.stack { grid-template-columns: 1fr; gap: 8px; }
+.center { text-align: center; }
+/* One centered column of buttons, stacked top to bottom. */
+.seg.stack { display: flex; flex-direction: column; align-items: stretch; gap: 10px; width: 100%; max-width: 340px; margin: 0 auto; }
 .seg.result span { flex-direction: column; min-height: 56px; font-size: 18px; }
 .seg.result small { font-size: 13px; font-weight: 600; opacity: .85; margin-top: 2px; }
 .seg input[value="Approved"]:checked + span { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
