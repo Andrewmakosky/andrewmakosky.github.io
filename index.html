@@ -69,12 +69,12 @@
       <div id="checklist"></div>
 
       <section class="card">
-        <h2>Overall</h2>
-        <fieldset class="field">
-          <legend>Is this vehicle safe to operate?</legend>
-          <div class="seg seg-2" role="radiogroup">
-            <label><input type="radio" name="safe" value="Yes" required><span>Yes</span></label>
-            <label><input type="radio" name="safe" value="No"><span>No — do not use</span></label>
+        <h2>Inspection Results</h2>
+        <fieldset class="field" id="resultField">
+          <div class="seg stack result" role="radiogroup" aria-label="Inspection result">
+            <label><input type="radio" name="result" value="Approved" required><span>Approved</span></label>
+            <label><input type="radio" name="result" value="Conditional Approval"><span>Conditional Approval<small>(Approved pending repairs)</small></span></label>
+            <label><input type="radio" name="result" value="Rejected"><span>Rejected</span></label>
           </div>
         </fieldset>
         <div class="field">

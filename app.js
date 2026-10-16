@@ -553,8 +553,8 @@
       return false;
     }
 
-    if (!valueOf("safe")) {
-      showError("Please answer whether the vehicle is safe to operate.", form.querySelector('input[name="safe"]').closest(".field"));
+    if (!valueOf("result")) {
+      showError("Please choose the inspection result: Approved, Conditional Approval, or Rejected.", $("resultField"));
       return false;
     }
     if (!$("inspector").value.trim()) {
@@ -588,15 +588,16 @@
     var isoDate = now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate());
     var items = allItems();
     var fails = items.filter(function (it) { return valueOf(it.id) === "Fail"; });
-    var safe = valueOf("safe");
+    var result = valueOf("result");
     var unit = $("unit").value.trim();
     var inspector = $("inspector").value.trim();
     var company = $("company").value.trim();
     var operators = getOperators().filter(function (o) { return o.name; });
     var operatorNames = operators.map(function (o) { return o.name; }).join(", ");
     var appName = CFG.companyName || "Fleet";
-    var kind = safe === "No" ? "oos" : fails.length ? "issues" : "ok";
-    var flag = kind === "oos" ? "OUT OF SERVICE" : kind === "issues" ? fails.length + " FAILED ITEM" + (fails.length > 1 ? "S" : "") : "ALL PASS";
+    var kind = result === "Rejected" ? "oos" : result === "Conditional Approval" ? "issues" : "ok";
+    var flag = result.toUpperCase() +
+      (fails.length ? " - " + fails.length + " FAILED ITEM" + (fails.length > 1 ? "S" : "") : "");
 
     var details = [
       ["Company", company],
@@ -607,7 +608,7 @@
       ["Site / route assigned", $("site").value.trim()],
       ["Inspector", inspector],
       ["Date", when],
-      ["Safe to operate", safe],
+      ["Inspection result", result === "Conditional Approval" ? result + " (approved pending repairs)" : result],
     ];
     // Values asked for on Pass (e.g. the GPS ID number) also go up top.
     items.forEach(function (it) {
@@ -670,14 +671,14 @@
       subject: "[" + flag + "] Unit " + unit + (company ? " (" + company + ")" : "") + " inspection - " + inspector + " - " + now.toLocaleDateString(),
       summary: L.join("\n"),
       photoCount: photoCount,
-      outOfService: kind !== "ok",
+      outOfService: kind !== "ok" || fails.length > 0,
       extraTo: extraEmails(),
       filename: "Inspection_Unit-" + safeUnit + "_" + isoDate + ".pdf",
       pdfData: {
         company: appName,
         status: { kind: kind, label: flag },
         details: details,
-        safe: safe,
+        result: result,
         sections: sections,
         notes: $("notes").value.trim(),
         notesPhotos: photos.notes || [],

@@ -113,9 +113,10 @@
     d.sections.forEach(function (s) {
       s.items.forEach(function (it) { if (it.result === "Fail") fails.push(it); });
     });
-    if (fails.length || d.safe === "No") {
+    if (fails.length || d.result !== "Approved") {
       var body = [];
-      if (d.safe === "No") body.push({ text: "Driver marked this vehicle NOT SAFE to operate.", bold: true });
+      if (d.result === "Rejected") body.push({ text: "Inspection result: REJECTED - do not dispatch.", bold: true });
+      if (d.result === "Conditional Approval") body.push({ text: "Inspection result: CONDITIONAL APPROVAL - approved pending repairs.", bold: true });
       fails.forEach(function (it) {
         body.push({ text: "- " + it.name + (it.note ? ": " + it.note : ""), bold: false });
       });
@@ -129,7 +130,7 @@
       doc.roundedRect(M, y, CW, boxH, 6, 6, "FD");
       font("bold", 11);
       color(COLORS.Fail.fg);
-      doc.text("PROBLEMS FOUND", M + 12, y + 18);
+      doc.text(fails.length ? "PROBLEMS FOUND" : "INSPECTION RESULT", M + 12, y + 18);
       var yy = y + 34;
       wrapped.forEach(function (b) {
         font(b.bold ? "bold" : "normal", 11);
