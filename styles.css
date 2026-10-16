@@ -241,3 +241,45 @@ h2 + .item[hidden] + .item { border-top: 0; padding-top: 0; }
   .contact-row .ct-phone { grid-column: 1; }
 }
 #recipientText { white-space: pre-line; font-size: 14px; }
+
+/* Tabs */
+.tabs {
+  max-width: 640px; margin: 12px auto 0; padding: 0 16px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+}
+.tab {
+  font: inherit; font-weight: 700; font-size: 16px; color: var(--text);
+  background: var(--card); border: 2px solid var(--line); border-radius: 10px;
+  min-height: 46px; padding: 6px 10px; cursor: pointer;
+}
+.tab.active { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+.tab-count:not(:empty) {
+  display: inline-block; min-width: 22px; padding: 0 6px; margin-left: 4px;
+  border-radius: 999px; background: rgba(127,127,127,.25); font-size: 13px; line-height: 20px;
+}
+
+/* Saved reports */
+#reportSearch { margin-bottom: 12px; }
+.report-list { display: grid; gap: 10px; }
+.report {
+  border: 1px solid var(--line); border-radius: 10px; padding: 12px;
+  background: var(--bg);
+}
+.report-top { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+.report-title { font-weight: 700; }
+.report-meta { color: var(--muted); font-size: 14px; margin-top: 2px; }
+.badge {
+  flex: none; font-size: 12px; font-weight: 800; letter-spacing: .02em;
+  padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+}
+.badge.ok { background: var(--ok-bg); color: var(--ok); }
+.badge.issues { background: var(--warn-bg); color: var(--warn); }
+.badge.oos { background: var(--fail-bg); color: var(--fail); }
+.report-status { font-size: 13px; font-weight: 600; margin-top: 6px; }
+.report-status.sent { color: var(--ok); }
+.report-status.unsent { color: var(--fail); }
+.report-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 6px; margin-top: 10px; }
+.report-actions .btn {
+  min-height: 42px; padding: 6px 8px; font-size: 15px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center; text-decoration: none; cursor: pointer;
+}

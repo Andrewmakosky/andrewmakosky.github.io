@@ -28,6 +28,18 @@ Progress and photos are saved on the phone as they go, so closing the app doesn'
 
 The email subject shows the same status, e.g. `[1 FAILED ITEM] Unit P-12 inspection - <inspector> - 10/12/2026`.
 
+## Sent reports tab
+
+Every submitted report is saved on the phone, with its PDF, under the **Sent reports** tab. For each one you can:
+- **Open PDF**
+- **Share** it (email, text, Save to Files)
+- **Resend** it to the office (useful if it showed "Not emailed automatically")
+- **Delete** it
+
+A search box filters by unit, company or inspector. The most recent 200 reports are kept.
+
+Saved reports live only on that phone. They're not shared between phones, and they're removed if the app or its website data is deleted.
+
 ## How reports get emailed
 
 There are two modes:

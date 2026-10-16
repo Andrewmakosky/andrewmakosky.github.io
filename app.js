@@ -25,25 +25,177 @@
   }
 
   // Photos are too big for localStorage, so they go in IndexedDB.
-  function idb(mode, fn) {
+  // Stores: "kv" (draft photos) and "reports" (saved reports with their PDFs).
+  function idb(storeName, mode, fn) {
     return new Promise(function (resolve, reject) {
       var open;
-      try { open = indexedDB.open("checklist", 1); } catch (e) { return reject(e); }
-      open.onupgradeneeded = function () { open.result.createObjectStore("kv"); };
+      try { open = indexedDB.open("checklist", 2); } catch (e) { return reject(e); }
+      open.onupgradeneeded = function () {
+        var db = open.result;
+        if (!db.objectStoreNames.contains("kv")) db.createObjectStore("kv");
+        if (!db.objectStoreNames.contains("reports")) db.createObjectStore("reports", { keyPath: "id" });
+      };
       open.onerror = function () { reject(open.error); };
       open.onsuccess = function () {
-        var tx = open.result.transaction("kv", mode);
-        var req = fn(tx.objectStore("kv"));
+        var tx = open.result.transaction(storeName, mode);
+        var req = fn(tx.objectStore(storeName));
         tx.oncomplete = function () { resolve(req && req.result); };
         tx.onerror = function () { reject(tx.error); };
       };
     });
   }
   function savePhotos() {
-    return idb("readwrite", function (s) { return s.put(photos, "photos"); }).catch(function () {});
+    return idb("kv", "readwrite", function (s) { return s.put(photos, "photos"); }).catch(function () {});
   }
   function loadPhotos() {
-    return idb("readonly", function (s) { return s.get("photos"); }).catch(function () { return null; });
+    return idb("kv", "readonly", function (s) { return s.get("photos"); }).catch(function () { return null; });
+  }
+
+  // ---------- saved reports ----------
+  var MAX_SAVED = 200;
+  var savedReports = [];
+
+  function loadReports() {
+    return idb("reports", "readonly", function (s) { return s.getAll(); }).then(function (list) {
+      savedReports = (list || []).sort(function (a, b) { return a.createdAt < b.createdAt ? 1 : -1; });
+      renderReports();
+    }).catch(function () { renderReports(); });
+  }
+
+  function putReport(rec) {
+    var i = savedReports.findIndex(function (x) { return x.id === rec.id; });
+    if (i >= 0) savedReports[i] = rec; else savedReports.unshift(rec);
+    var drop = savedReports.splice(MAX_SAVED);
+    renderReports();
+    return idb("reports", "readwrite", function (s) {
+      drop.forEach(function (d) { s.delete(d.id); });
+      return s.put(rec);
+    }).catch(function () {});
+  }
+
+  function deleteReport(id) {
+    savedReports = savedReports.filter(function (x) { return x.id !== id; });
+    renderReports();
+    return idb("reports", "readwrite", function (s) { return s.delete(id); }).catch(function () {});
+  }
+
+  var STATUS_TEXT = {
+    sent: "✓ Emailed to the office",
+    sending: "Sending…",
+    failed: "✗ Not emailed automatically",
+    manual: "Saved — email it from your phone",
+  };
+
+  function renderReports() {
+    $("reportCount").textContent = savedReports.length ? savedReports.length : "";
+    var q = $("reportSearch").value.trim().toLowerCase();
+    var list = savedReports.filter(function (r) {
+      return !q || [r.unit, r.company, r.inspector, r.vehicleType, r.result].join(" ").toLowerCase().indexOf(q) >= 0;
+    });
+    var box = $("reportList");
+    box.innerHTML = "";
+    $("reportEmpty").hidden = list.length > 0;
+    $("reportEmpty").textContent = savedReports.length
+      ? "No saved reports match your search."
+      : "No reports yet. Reports appear here after you submit them.";
+
+    list.forEach(function (r) {
+      var el = document.createElement("div");
+      el.className = "report";
+      el.innerHTML =
+        '<div class="report-top"><div><div class="report-title"></div><div class="report-meta"></div></div>' +
+        '<span class="badge"></span></div>' +
+        '<div class="report-status"></div>' +
+        '<div class="report-actions">' +
+          '<a class="btn ghost" data-act="open">Open PDF</a>' +
+          '<button type="button" class="btn ghost" data-act="share">Share</button>' +
+          '<button type="button" class="btn ghost" data-act="resend">Resend</button>' +
+          '<button type="button" class="btn ghost danger" data-act="delete">Delete</button>' +
+        '</div>';
+      el.querySelector(".report-title").textContent = "Unit " + r.unit + " — " + r.vehicleType;
+      el.querySelector(".report-meta").textContent = [r.company, r.inspector, new Date(r.createdAt).toLocaleString(undefined, {
+        month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
+      })].filter(Boolean).join(" · ");
+      var badge = el.querySelector(".badge");
+      badge.textContent = r.result;
+      badge.className = "badge " + r.kind;
+      var st = el.querySelector(".report-status");
+      st.textContent = STATUS_TEXT[r.status] || "";
+      st.className = "report-status " + (r.status === "sent" ? "sent" : r.status === "failed" ? "unsent" : "");
+
+      var open = el.querySelector('[data-act="open"]');
+      open.addEventListener("click", function () {
+        var url = URL.createObjectURL(r.blob);
+        open.href = url;
+        open.download = r.filename;
+        setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+      });
+      var share = el.querySelector('[data-act="share"]');
+      var file = fileFor(r);
+      share.hidden = !(file && navigator.canShare && navigator.canShare({ files: [file] }));
+      share.addEventListener("click", function () {
+        navigator.share({ files: [file], title: r.subject, text: r.subject }).catch(function () {});
+      });
+      var resend = el.querySelector('[data-act="resend"]');
+      resend.hidden = !CFG.emailServiceUrl;
+      resend.addEventListener("click", function () {
+        if (!confirm("Email this report to the office again?")) return;
+        resendReport(r, resend);
+      });
+      el.querySelector('[data-act="delete"]').addEventListener("click", function () {
+        if (confirm("Delete the saved report for unit " + r.unit + " from this phone?")) deleteReport(r.id);
+      });
+      box.appendChild(el);
+    });
+  }
+
+  function fileFor(r) {
+    try { return new File([r.blob], r.filename, { type: "application/pdf" }); } catch (e) { return null; }
+  }
+
+  function blobToBase64(blob) {
+    return new Promise(function (resolve, reject) {
+      var fr = new FileReader();
+      fr.onload = function () { resolve(String(fr.result).split(",")[1]); };
+      fr.onerror = function () { reject(fr.error); };
+      fr.readAsDataURL(blob);
+    });
+  }
+
+  function resendReport(r, btn) {
+    btn.disabled = true;
+    btn.textContent = "Sending…";
+    blobToBase64(r.blob).then(function (b64) {
+      // Resend goes to the office list only, not to one-time contacts again.
+      return sendAuto({ subject: r.subject, summary: r.summary, extraTo: [] }, { filename: r.filename, base64: b64 });
+    }).then(function () {
+      r.status = "sent";
+      putReport(r);
+      alert("Report for unit " + r.unit + " was emailed to the office.");
+    }).catch(function () {
+      alert("Couldn't send right now. Check your connection and try again.");
+      btn.disabled = false;
+      btn.textContent = "Resend";
+    });
+  }
+
+  // Ask the browser not to clear saved reports to free up space.
+  function keepStorage() {
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { /* ignore */ }
+  }
+
+  // ---------- tabs ----------
+  var newTabView = "formView";   // which screen the New inspection tab shows
+  function showTab(tab) {
+    var reports = tab === "reports";
+    $("tabNew").classList.toggle("active", !reports);
+    $("tabReports").classList.toggle("active", reports);
+    $("reportsView").hidden = !reports;
+    $("formView").hidden = reports || newTabView !== "formView";
+    $("doneView").hidden = reports || newTabView !== "doneView";
+    $("progressText").parentNode.style.visibility = reports ? "hidden" : "";
+    if (reports) renderReports();
+    window.scrollTo(0, 0);
   }
 
   // ---------- build the form ----------
@@ -751,6 +903,7 @@
 
   function showDone(mode, result) {
     var r = last.report;
+    newTabView = "doneView";
     $("formView").hidden = true;
     $("doneView").hidden = false;
     document.querySelector(".done").classList.toggle("warn", r.outOfService);
@@ -837,18 +990,43 @@
     }
     last = { report: r, pdf: pdf };
 
+    var rec = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      createdAt: new Date().toISOString(),
+      unit: $("unit").value.trim(),
+      company: $("company").value.trim(),
+      vehicleType: vehicleTypeText(),
+      inspector: $("inspector").value.trim(),
+      result: valueOf("result"),
+      kind: r.pdfData.status.kind,
+      subject: r.subject,
+      summary: r.summary,
+      extraTo: r.extraTo,
+      filename: pdf.filename,
+      blob: pdf.blob,
+      status: "sending",
+    };
+    keepStorage();
+
     if (CFG.emailServiceUrl && navigator.onLine !== false) {
       btn.textContent = "Sending…";
+      putReport(rec);
       sendAuto(r, pdf).then(function (result) {
+        rec.status = "sent";
+        putReport(rec);
         showDone("auto", result);
         clearForm(true);
       }).catch(function () {
+        rec.status = "failed";
+        putReport(rec);
         showDone("failed");
       }).then(function () {
         btn.disabled = false;
         btn.textContent = "Submit report";
       });
     } else {
+      rec.status = CFG.emailServiceUrl ? "failed" : "manual";
+      putReport(rec);
       showDone(CFG.emailServiceUrl ? "failed" : "manual");
       btn.disabled = false;
       btn.textContent = "Submit report";
@@ -934,6 +1112,7 @@
   });
 
   $("newBtn").addEventListener("click", function () {
+    newTabView = "formView";
     clearForm();
     $("doneView").hidden = true;
     $("formView").hidden = false;
@@ -974,6 +1153,11 @@
     };
     if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, function () {});
   });
+
+  $("tabNew").addEventListener("click", function () { showTab("new"); });
+  $("tabReports").addEventListener("click", function () { showTab("reports"); });
+  $("reportSearch").addEventListener("input", renderReports);
+  loadReports();
 
   $("appVersion").textContent = "App version " + (window.APP_VERSION || "");
 
