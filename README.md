@@ -30,15 +30,19 @@ The email subject shows the same status, e.g. `[1 FAILED ITEM] Unit P-12 inspect
 
 ## Sent reports tab
 
-Every submitted report is saved on the phone, with its PDF, under the **Sent reports** tab. For each one you can:
-- **Open PDF**
-- **Share** it (email, text, Save to Files)
-- **Resend** it to the office (useful if it showed "Not emailed automatically")
-- **Delete** it
+The **Sent reports** tab has two lists.
 
-A search box filters by unit, company or inspector. The most recent 200 reports are kept.
+**All reports** shows every report submitted from any phone. The Google email sender saves each PDF in a Drive folder called **Inspection Reports** and logs it in a Google Sheet, **Inspection Reports Log**, inside that folder. Viewing the list in the app needs the passcode set in `VIEW_PASSCODE` in `email-sender.gs`. Each device asks for it once; **Lock on this device** forgets it.
 
-Saved reports live only on that phone. They're not shared between phones, and they're removed if the app or its website data is deleted.
+**On this phone** shows reports submitted from this device, including any that didn't email. Each one has **Open PDF**, **Share**, **Resend** (office list only) and **Delete**.
+
+A search box filters both lists by unit, company or inspector.
+
+### Turning on the shared list (one time)
+1. Paste the latest `email-sender.gs` into the Apps Script project, replacing everything.
+2. Set `VIEW_PASSCODE` to a passcode of your choice and save.
+3. Pick **setup** in the function dropdown and click **Run**. Allow the new Google Drive and Sheets permissions when asked. The log shows links to the new folder and sheet.
+4. Click **Deploy**, then **Manage deployments**, then the ✏️ pencil, then **Version: New version**, then **Deploy**.
 
 ## How reports get emailed
 

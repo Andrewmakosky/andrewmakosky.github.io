@@ -88,10 +88,7 @@
 
   function renderReports() {
     $("reportCount").textContent = savedReports.length ? savedReports.length : "";
-    var q = $("reportSearch").value.trim().toLowerCase();
-    var list = savedReports.filter(function (r) {
-      return !q || [r.unit, r.company, r.inspector, r.vehicleType, r.result].join(" ").toLowerCase().indexOf(q) >= 0;
-    });
+    var list = savedReports.filter(matchesSearch);
     var box = $("reportList");
     box.innerHTML = "";
     $("reportEmpty").hidden = list.length > 0;
@@ -167,7 +164,7 @@
     btn.textContent = "Sending…";
     blobToBase64(r.blob).then(function (b64) {
       // Resend goes to the office list only, not to one-time contacts again.
-      return sendAuto({ subject: r.subject, summary: r.summary, extraTo: [] }, { filename: r.filename, base64: b64 });
+      return sendAuto({ subject: r.subject, summary: r.summary, extraTo: [] }, { filename: r.filename, base64: b64 }, reportMeta(r));
     }).then(function () {
       r.status = "sent";
       putReport(r);
@@ -184,6 +181,123 @@
     try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { /* ignore */ }
   }
 
+  // Details the email sender logs alongside the saved PDF.
+  function reportMeta(rec) {
+    return {
+      createdAt: rec.createdAt, unit: rec.unit, company: rec.company, vehicleType: rec.vehicleType,
+      result: rec.result, inspector: rec.inspector, kind: rec.kind,
+    };
+  }
+
+  // ---------- shared reports (Google Drive archive, all devices) ----------
+  var PASS_KEY = "checklist-passcode";
+  var sharedReports = [];
+  var sharedPdfs = {};   // id -> Blob, once opened
+
+  function sharedGet(params) {
+    var q = Object.keys(params).map(function (k) { return k + "=" + encodeURIComponent(params[k]); }).join("&");
+    return fetch(CFG.emailServiceUrl + "?" + q).then(function (res) { return res.json(); });
+  }
+
+  function setSharedState(state, msg) {
+    var locked = state === "locked";
+    $("unlockForm").hidden = !locked;
+    $("sharedLock").hidden = locked || !load(PASS_KEY);
+    $("sharedRefresh").hidden = locked;
+    $("sharedError").hidden = !msg;
+    $("sharedError").textContent = msg || "";
+    if (state !== "ready") { $("sharedList").innerHTML = ""; $("sharedEmpty").hidden = state !== "loading"; }
+    if (state === "loading") $("sharedEmpty").textContent = "Loading reports…";
+  }
+
+  function loadShared() {
+    if (!CFG.emailServiceUrl) { $("sharedCard").hidden = true; return; }
+    var pass = load(PASS_KEY);
+    if (!pass) { setSharedState("locked"); return; }
+    setSharedState("loading");
+    sharedGet({ action: "list", passcode: pass }).then(function (j) {
+      if (j.ok && Array.isArray(j.reports)) {
+        sharedReports = j.reports;
+        setSharedState("ready");
+        renderShared();
+      } else if (j.ok) {
+        setSharedState("error", "The Google email sender needs the latest update before reports can be shared between devices.");
+      } else if (/passcode/i.test(j.error || "")) {
+        store(PASS_KEY, null);
+        setSharedState("locked", j.error);
+      } else {
+        setSharedState("error", j.error || "Couldn't load the reports.");
+      }
+    }).catch(function () {
+      setSharedState("error", "Couldn't reach the reports. Check your connection and tap Refresh.");
+    });
+  }
+
+  function matchesSearch(r) {
+    var q = $("reportSearch").value.trim().toLowerCase();
+    return !q || [r.unit, r.company, r.inspector, r.vehicleType, r.result].join(" ").toLowerCase().indexOf(q) >= 0;
+  }
+
+  function formatWhen(iso) {
+    var d = new Date(iso);
+    return isNaN(d) ? "" : d.toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+  }
+
+  function renderShared() {
+    var list = sharedReports.filter(matchesSearch);
+    var box = $("sharedList");
+    box.innerHTML = "";
+    $("sharedEmpty").hidden = list.length > 0;
+    $("sharedEmpty").textContent = sharedReports.length ? "No reports match your search." : "No reports have been saved yet.";
+    list.forEach(function (r) {
+      var el = document.createElement("div");
+      el.className = "report";
+      el.innerHTML =
+        '<div class="report-top"><div><div class="report-title"></div><div class="report-meta"></div></div>' +
+        '<span class="badge"></span></div>' +
+        '<div class="report-actions"><button type="button" class="btn ghost">Open PDF</button></div>';
+      el.querySelector(".report-title").textContent = "Unit " + r.unit + " — " + r.vehicleType;
+      el.querySelector(".report-meta").textContent = [r.company, r.inspector, formatWhen(r.createdAt)].filter(Boolean).join(" · ");
+      var badge = el.querySelector(".badge");
+      badge.textContent = r.result;
+      badge.className = "badge " + (r.kind || "ok");
+      var btn = el.querySelector(".btn");
+      btn.addEventListener("click", function () { openSharedPdf(r, btn); });
+      box.appendChild(el);
+    });
+  }
+
+  function downloadBlob(blob, filename) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+  }
+
+  function openSharedPdf(r, btn) {
+    var name = "Inspection_Unit-" + String(r.unit).replace(/[^A-Za-z0-9-]+/g, "-") + ".pdf";
+    if (sharedPdfs[r.id]) { downloadBlob(sharedPdfs[r.id], name); return; }
+    btn.disabled = true;
+    btn.textContent = "Loading…";
+    sharedGet({ action: "pdf", id: r.id, passcode: load(PASS_KEY) || "" }).then(function (j) {
+      if (!j.ok) throw new Error(j.error || "Couldn't open the PDF.");
+      var bytes = atob(j.pdfBase64);
+      var arr = new Uint8Array(bytes.length);
+      for (var i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+      sharedPdfs[r.id] = new Blob([arr], { type: "application/pdf" });
+      downloadBlob(sharedPdfs[r.id], j.filename || name);
+    }).catch(function (err) {
+      alert(err.message || "Couldn't open the PDF. Check your connection.");
+    }).then(function () {
+      btn.disabled = false;
+      btn.textContent = "Open PDF";
+    });
+  }
+
   // ---------- tabs ----------
   var newTabView = "formView";   // which screen the New inspection tab shows
   function showTab(tab) {
@@ -194,7 +308,7 @@
     $("formView").hidden = reports || newTabView !== "formView";
     $("doneView").hidden = reports || newTabView !== "doneView";
     $("progressText").parentNode.style.visibility = reports ? "hidden" : "";
-    if (reports) renderReports();
+    if (reports) { renderReports(); loadShared(); }
     window.scrollTo(0, 0);
   }
 
@@ -880,7 +994,7 @@
     return !!(f && navigator.canShare && navigator.canShare({ files: [f] }));
   }
 
-  function sendAuto(r, pdf) {
+  function sendAuto(r, pdf, meta) {
     // text/plain avoids a CORS preflight, which Apps Script can't answer.
     return fetch(CFG.emailServiceUrl, {
       method: "POST",
@@ -892,6 +1006,7 @@
         body: r.summary + "\n\nThe full inspection report is attached as a PDF.",
         filename: pdf.filename,
         pdfBase64: pdf.base64,
+        meta: meta || {},
       }),
     }).then(function (res) {
       return res.json().then(function (j) {
@@ -1011,7 +1126,7 @@
     if (CFG.emailServiceUrl && navigator.onLine !== false) {
       btn.textContent = "Sending…";
       putReport(rec);
-      sendAuto(r, pdf).then(function (result) {
+      sendAuto(r, pdf, reportMeta(rec)).then(function (result) {
         rec.status = "sent";
         putReport(rec);
         showDone("auto", result);
@@ -1156,7 +1271,22 @@
 
   $("tabNew").addEventListener("click", function () { showTab("new"); });
   $("tabReports").addEventListener("click", function () { showTab("reports"); });
-  $("reportSearch").addEventListener("input", renderReports);
+  $("reportSearch").addEventListener("input", function () { renderReports(); renderShared(); });
+  $("unlockForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var pass = $("passcodeInput").value.trim();
+    if (!pass) return;
+    store(PASS_KEY, pass);
+    $("passcodeInput").value = "";
+    loadShared();
+  });
+  $("sharedRefresh").addEventListener("click", loadShared);
+  $("sharedLock").addEventListener("click", function () {
+    store(PASS_KEY, null);
+    sharedReports = [];
+    sharedPdfs = {};
+    setSharedState("locked");
+  });
   loadReports();
 
   $("appVersion").textContent = "App version " + (window.APP_VERSION || "");
