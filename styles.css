@@ -10,6 +10,8 @@
   --ok-bg: #e3f4e8;
   --fail: #b42318;
   --fail-bg: #fde8e6;
+  --warn: #b54708;
+  --warn-bg: #fef0c7;
   --na: #5a6b7b;
   --na-bg: #e9eef3;
   --focus: #2b7fd1;
@@ -27,6 +29,8 @@
     --ok-bg: #133222;
     --fail: #ff8a80;
     --fail-bg: #3a1714;
+    --warn: #fdb022;
+    --warn-bg: #3d2a0a;
     --na: #a9b8c6;
     --na-bg: #22303d;
     --focus: #6fb0f0;
@@ -132,6 +136,12 @@ h2 + .item[hidden] + .item { border-top: 0; padding-top: 0; }
 .seg input[value="Fail"]:checked + span,
 .seg input[value="No"]:checked + span { background: var(--fail-bg); border-color: var(--fail); color: var(--fail); }
 .seg.choice input:checked + span { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+.seg.stack { grid-template-columns: 1fr; gap: 8px; }
+.seg.result span { flex-direction: column; min-height: 56px; font-size: 18px; }
+.seg.result small { font-size: 13px; font-weight: 600; opacity: .85; margin-top: 2px; }
+.seg input[value="Approved"]:checked + span { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
+.seg input[value="Conditional Approval"]:checked + span { background: var(--warn-bg); border-color: var(--warn); color: var(--warn); }
+.seg input[value="Rejected"]:checked + span { background: var(--fail-bg); border-color: var(--fail); color: var(--fail); }
 .seg input[value="N/A"]:checked + span { background: var(--na-bg); border-color: var(--na); color: var(--na); }
 
 .check { display: flex; gap: 12px; align-items: flex-start; font-size: 16px; }
