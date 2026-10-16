@@ -22,6 +22,11 @@
     <h1 class="topbar-title" id="brandName">Creative Snow Vehicle Inspection Checklist</h1>
   </header>
 
+  <nav class="tabs" aria-label="Sections">
+    <button type="button" class="tab active" id="tabNew">New inspection</button>
+    <button type="button" class="tab" id="tabReports">Sent reports <span class="tab-count" id="reportCount"></span></button>
+  </nav>
+
   <main id="formView">
     <form id="checkForm" novalidate>
       <section class="card">
@@ -131,6 +136,16 @@
         <button type="button" class="btn ghost" id="mailtoBtn" hidden>Email without PDF</button>
         <button type="button" class="btn ghost" id="newBtn">Start a new checklist</button>
       </div>
+    </section>
+  </main>
+
+  <main id="reportsView" hidden>
+    <section class="card">
+      <h2>Sent reports</h2>
+      <p class="hint">Every report you submit is saved here on this phone, with its PDF.</p>
+      <input type="search" id="reportSearch" placeholder="Search unit, company, inspector…" aria-label="Search saved reports">
+      <div id="reportList" class="report-list"></div>
+      <p class="hint" id="reportEmpty">No reports yet. Reports appear here after you submit them.</p>
     </section>
   </main>
 
