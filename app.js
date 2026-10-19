@@ -29,11 +29,12 @@
   function idb(storeName, mode, fn) {
     return new Promise(function (resolve, reject) {
       var open;
-      try { open = indexedDB.open("checklist", 2); } catch (e) { return reject(e); }
+      try { open = indexedDB.open("checklist", 3); } catch (e) { return reject(e); }
       open.onupgradeneeded = function () {
         var db = open.result;
         if (!db.objectStoreNames.contains("kv")) db.createObjectStore("kv");
         if (!db.objectStoreNames.contains("reports")) db.createObjectStore("reports", { keyPath: "id" });
+        if (!db.objectStoreNames.contains("drafts")) db.createObjectStore("drafts", { keyPath: "id" });
       };
       open.onerror = function () { reject(open.error); };
       open.onsuccess = function () {
@@ -107,6 +108,7 @@
           '<a class="btn ghost" data-act="open">Open PDF</a>' +
           '<button type="button" class="btn ghost" data-act="share">Share</button>' +
           '<button type="button" class="btn ghost" data-act="resend">Resend</button>' +
+          '<button type="button" class="btn ghost" data-act="edit">Edit</button>' +
           '<button type="button" class="btn ghost danger" data-act="delete">Delete</button>' +
         '</div>';
       el.querySelector(".report-title").textContent = "Unit " + r.unit + " — " + r.vehicleType;
@@ -139,6 +141,9 @@
         if (!confirm("Email this report to the office again?")) return;
         resendReport(r, resend);
       });
+      var editBtn = el.querySelector('[data-act="edit"]');
+      editBtn.hidden = !r.state;   // reports from before editing existed can't be reopened
+      editBtn.addEventListener("click", function () { editReport(r); });
       el.querySelector('[data-act="delete"]').addEventListener("click", function () {
         if (confirm("Delete the saved report for unit " + r.unit + " from this phone?")) deleteReport(r.id);
       });
@@ -202,7 +207,6 @@
   function setSharedState(state, msg) {
     var locked = state === "locked";
     $("unlockForm").hidden = !locked;
-    $("sharedLock").hidden = locked || !load(PASS_KEY);
     $("sharedRefresh").hidden = locked;
     $("sharedError").hidden = !msg;
     $("sharedError").textContent = msg || "";
@@ -296,6 +300,129 @@
       btn.disabled = false;
       btn.textContent = "Open PDF";
     });
+  }
+
+  // ---------- save for later / edit submitted ----------
+  // editing = { draftId?, reportId?, originalAt?, unit? }: what the form on screen came from.
+  var EDITING_KEY = "checklist-editing";
+  var editing = load(EDITING_KEY);
+  var drafts = [];
+
+  function setEditing(e) {
+    editing = e;
+    store(EDITING_KEY, e);
+    var banner = $("editingBanner");
+    banner.hidden = !e;
+    if (!e) return;
+    $("editingText").textContent = e.reportId
+      ? "Editing submitted report — Unit " + (e.unit || "") + ". Submit to send the updated report."
+      : "Continuing saved inspection — Unit " + (e.unit || "?");
+  }
+
+  function captureState() {
+    return { data: formData(), photos: JSON.parse(JSON.stringify(photos)) };
+  }
+
+  function applyState(state) {
+    store(DRAFT_KEY, state.data || null);
+    photos = state.photos || {};
+    savePhotos();
+    restoreDraft();
+    showExtraRows();
+    renderAllPhotos();
+    form.querySelectorAll(".missing, .invalid").forEach(function (el) { el.classList.remove("missing", "invalid"); });
+    $("formError").hidden = true;
+    refresh();
+  }
+
+  function formHasData() {
+    return !!($("company").value.trim() || $("unit").value.trim() || form.querySelector('.item input[type="radio"]:checked'));
+  }
+
+  function loadDrafts() {
+    return idb("drafts", "readonly", function (s) { return s.getAll(); }).then(function (list) {
+      drafts = (list || []).sort(function (a, b) { return a.savedAt < b.savedAt ? 1 : -1; });
+      renderDrafts();
+    }).catch(function () { renderDrafts(); });
+  }
+
+  function renderDrafts() {
+    $("draftsCard").hidden = !drafts.length;
+    var box = $("draftList");
+    box.innerHTML = "";
+    drafts.forEach(function (d) {
+      var el = document.createElement("div");
+      el.className = "report";
+      el.innerHTML =
+        '<div class="report-title"></div><div class="report-meta"></div>' +
+        '<div class="report-actions">' +
+          '<button type="button" class="btn primary" data-act="continue">Continue</button>' +
+          '<button type="button" class="btn ghost danger" data-act="delete">Delete</button>' +
+        '</div>';
+      el.querySelector(".report-title").textContent = "Unit " + (d.unit || "(no unit yet)") + (d.vehicleType ? " — " + d.vehicleType : "");
+      el.querySelector(".report-meta").textContent = [d.company, (d.reportId ? "Edit of submitted report · " : "") + "Saved " + formatWhen(d.savedAt)].filter(Boolean).join(" · ");
+      el.querySelector('[data-act="continue"]').addEventListener("click", function () {
+        if (formHasData() && !(editing && editing.draftId === d.id) &&
+            !confirm("Replace the inspection on screen with this saved one? Anything not saved will be lost.")) return;
+        applyState(d.state);
+        setEditing({ draftId: d.id, reportId: d.reportId, originalAt: d.originalAt, unit: d.unit });
+        window.scrollTo(0, 0);
+      });
+      el.querySelector('[data-act="delete"]').addEventListener("click", function () {
+        if (!confirm("Delete this saved inspection?")) return;
+        removeDraft(d.id);
+        if (editing && editing.draftId === d.id) setEditing(Object.assign({}, editing, { draftId: null }));
+      });
+      box.appendChild(el);
+    });
+  }
+
+  function removeDraft(id) {
+    drafts = drafts.filter(function (x) { return x.id !== id; });
+    renderDrafts();
+    return idb("drafts", "readwrite", function (s) { return s.delete(id); }).catch(function () {});
+  }
+
+  function saveForLater() {
+    var d = {
+      id: (editing && editing.draftId) || Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      savedAt: new Date().toISOString(),
+      unit: $("unit").value.trim(),
+      company: $("company").value.trim(),
+      vehicleType: valueOf("vehicleCategory") ? vehicleTypeText() : "",
+      reportId: editing && editing.reportId,
+      originalAt: editing && editing.originalAt,
+      state: captureState(),
+    };
+    var i = drafts.findIndex(function (x) { return x.id === d.id; });
+    if (i >= 0) drafts[i] = d; else drafts.unshift(d);
+    keepStorage();
+    return idb("drafts", "readwrite", function (s) { return s.put(d); }).then(function () {
+      clearForm();
+      renderDrafts();
+      toast("Saved. Find it under \"Saved for later\" to finish it.");
+    }).catch(function () {
+      alert("Couldn't save on this phone. Please try again.");
+    });
+  }
+
+  function editReport(r) {
+    if (formHasData() && !confirm("Replace the inspection on screen with this report to edit it? Anything not saved will be lost.")) return;
+    applyState(r.state);
+    // They must re-confirm the inspection after making changes.
+    $("certify").checked = false;
+    saveDraft();
+    setEditing({ reportId: r.id, originalAt: r.originalAt || r.createdAt, unit: r.unit });
+    newTabView = "formView";
+    showTab("new");
+  }
+
+  function toast(msg) {
+    var t = document.createElement("div");
+    t.className = "toast";
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, 3500);
   }
 
   // ---------- tabs ----------
@@ -680,6 +807,12 @@
 
   // ---------- drafts ----------
   function saveDraft() {
+    store(DRAFT_KEY, formData());
+    if ($("inspector").value.trim()) store(INSPECTOR_KEY, $("inspector").value.trim());
+  }
+
+  // Everything typed or picked on the form (photos are kept separately).
+  function formData() {
     var data = {};
     Array.prototype.forEach.call(form.elements, function (el) {
       var key = el.name || el.id;
@@ -691,8 +824,7 @@
     data.operators = getOperators();
     data.contacts = {};
     contactBoxes().forEach(function (box) { data.contacts[box.dataset.contacts] = getContacts(box.dataset.contacts); });
-    store(DRAFT_KEY, data);
-    if ($("inspector").value.trim()) store(INSPECTOR_KEY, $("inspector").value.trim());
+    return data;
   }
 
   function restoreDraft() {
@@ -934,7 +1066,7 @@
     var safeUnit = unit.replace(/[^A-Za-z0-9-]+/g, "-").replace(/^-+|-+$/g, "") || "vehicle";
 
     return {
-      subject: "[" + flag + "] Unit " + unit + (company ? " (" + company + ")" : "") + " inspection - " + inspector + " - " + now.toLocaleDateString(),
+      subject: (editing && editing.reportId ? "[UPDATED] " : "") + "[" + flag + "] Unit " + unit + (company ? " (" + company + ")" : "") + " inspection - " + inspector + " - " + now.toLocaleDateString(),
       summary: L.join("\n"),
       photoCount: photoCount,
       outOfService: kind !== "ok" || fails.length > 0,
@@ -954,6 +1086,7 @@
         operators: operators.map(function (o) { return { name: o.name, photos: photos[o.id] || [] }; }),
         dateStr: when,
         footer: appName + "  |  Unit " + unit + "  |  " + when,
+        headerNote: editing && editing.reportId ? "UPDATED (originally submitted " + formatWhen(editing.originalAt) + ")" : "",
         filename: "Inspection_Unit-" + safeUnit + "_" + isoDate + ".pdf",
       },
     };
@@ -1106,8 +1239,11 @@
     last = { report: r, pdf: pdf };
 
     var rec = {
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      // Editing a submitted report replaces it on this phone.
+      id: (editing && editing.reportId) || Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       createdAt: new Date().toISOString(),
+      originalAt: editing && editing.reportId ? editing.originalAt : undefined,
+      state: captureState(),
       unit: $("unit").value.trim(),
       company: $("company").value.trim(),
       vehicleType: vehicleTypeText(),
@@ -1122,6 +1258,8 @@
       status: "sending",
     };
     keepStorage();
+    // Once submitted, it's no longer a saved-for-later inspection.
+    if (editing && editing.draftId) removeDraft(editing.draftId);
 
     if (CFG.emailServiceUrl && navigator.onLine !== false) {
       btn.textContent = "Sending…";
@@ -1158,6 +1296,7 @@
     });
     $("formError").hidden = true;
     store(DRAFT_KEY, null);
+    setEditing(null);
     photos = {};
     savePhotos();
     resetOperators();
@@ -1281,12 +1420,13 @@
     loadShared();
   });
   $("sharedRefresh").addEventListener("click", loadShared);
-  $("sharedLock").addEventListener("click", function () {
-    store(PASS_KEY, null);
-    sharedReports = [];
-    sharedPdfs = {};
-    setSharedState("locked");
+  $("saveLaterBtn").addEventListener("click", saveForLater);
+  $("editingCancel").addEventListener("click", function () {
+    if (confirm("Clear this form and start a new inspection? Changes that weren't saved will be lost.")) clearForm();
   });
+  setEditing(editing);
+  loadDrafts();
+
   loadReports();
 
   $("appVersion").textContent = "App version " + (window.APP_VERSION || "");

@@ -28,11 +28,17 @@ Progress and photos are saved on the phone as they go, so closing the app doesn'
 
 The email subject shows the same status, e.g. `[1 FAILED ITEM] Unit P-12 inspection - <inspector> - 10/12/2026`.
 
+## Save for later and editing
+
+- **Save for later** (under Submit) stores the inspection on the phone, photos included, and clears the form. Saved inspections are listed at the top of **New inspection**; **Continue** reopens one exactly where it was left.
+- **Edit** on a report under **Sent reports → On this phone** reopens a submitted report. The inspector must tick the confirmation box again. Submitting sends a new email marked **[UPDATED]**, and the PDF header says "UPDATED (originally submitted …)". The phone's copy is replaced; the Drive archive keeps both versions.
+- Only reports submitted from app version v33 onward can be edited.
+
 ## Sent reports tab
 
 The **Sent reports** tab has two lists.
 
-**All reports** shows every report submitted from any phone. The Google email sender saves each PDF in a Drive folder called **Inspection Reports** and logs it in a Google Sheet, **Inspection Reports Log**, inside that folder. Viewing the list in the app needs the passcode set in `VIEW_PASSCODE` in `email-sender.gs`. Each device asks for it once; **Lock on this device** forgets it.
+**All reports** shows every report submitted from any phone. The Google email sender saves each PDF in a Drive folder called **Inspection Reports** and logs it in a Google Sheet, **Inspection Reports Log**, inside that folder. Viewing the list in the app needs the passcode set in `VIEW_PASSCODE` in `email-sender.gs`. Each device asks for it once.
 
 **On this phone** shows reports submitted from this device, including any that didn't email. Each one has **Open PDF**, **Share**, **Resend** (office list only) and **Delete**.
 
