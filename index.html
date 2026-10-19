@@ -28,6 +28,17 @@
   </nav>
 
   <main id="formView">
+    <section class="card" id="draftsCard" hidden>
+      <h2>Saved for later</h2>
+      <p class="hint">Inspections you saved to finish another time, on this phone.</p>
+      <div id="draftList" class="report-list"></div>
+    </section>
+
+    <div class="editing-banner" id="editingBanner" hidden>
+      <span id="editingText"></span>
+      <button type="button" class="link-btn" id="editingCancel">Start over</button>
+    </div>
+
     <form id="checkForm" novalidate>
       <section class="card">
         <h2>Vehicle &amp; operators</h2>
@@ -114,6 +125,7 @@
 
       <div class="actions">
         <button type="submit" class="btn primary" id="submitBtn">Submit report</button>
+        <button type="button" class="btn ghost" id="saveLaterBtn">Save for later</button>
         <button type="button" class="btn ghost danger" id="resetBtn">Clear form</button>
       </div>
       <p class="version" id="appVersion"></p>
@@ -155,7 +167,6 @@
       <p class="error" id="sharedError" hidden></p>
       <div id="sharedList" class="report-list"></div>
       <p class="hint" id="sharedEmpty" hidden></p>
-      <button type="button" class="link-btn" id="sharedLock" hidden>Lock on this device</button>
     </section>
 
     <section class="card">

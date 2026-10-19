@@ -65,7 +65,7 @@
     font("bold", 18);
     doc.text(clean(d.company), M, 34);
     font("normal", 11);
-    doc.text("Vehicle Inspection Report", M, 54);
+    doc.text("Vehicle Inspection Report" + (d.headerNote ? " - " + clean(d.headerNote) : ""), M, 54);
 
     var st = STATUS[d.status.kind];
     font("bold", 12);

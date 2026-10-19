@@ -267,7 +267,7 @@ h2 + .item[hidden] + .item { border-top: 0; padding-top: 0; }
 }
 .unlock { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 10px; }
 .unlock .btn { width: auto; }
-#sharedLock { margin-top: 10px; }
+
 .report-list { display: grid; gap: 10px; }
 .report {
   border: 1px solid var(--line); border-radius: 10px; padding: 12px;
@@ -290,4 +290,17 @@ h2 + .item[hidden] + .item { border-top: 0; padding-top: 0; }
 .report-actions .btn {
   min-height: 42px; padding: 6px 8px; font-size: 15px; border-radius: 9px;
   display: flex; align-items: center; justify-content: center; text-decoration: none; cursor: pointer;
+}
+
+/* Saved-for-later / editing */
+.editing-banner {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn);
+  border-radius: 10px; padding: 10px 12px; margin: 0 0 12px; font-weight: 700; font-size: 15px;
+}
+.editing-banner .link-btn { color: var(--warn); text-decoration: underline; flex: none; }
+.toast {
+  position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+  background: var(--text); color: var(--card); padding: 12px 16px; border-radius: 10px;
+  font-weight: 700; box-shadow: 0 4px 16px rgba(0,0,0,.25); z-index: 50; max-width: calc(100% - 32px);
 }
