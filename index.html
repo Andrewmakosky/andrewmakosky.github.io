@@ -159,21 +159,18 @@
         <h2>All reports</h2>
         <button type="button" class="link-btn" id="sharedRefresh" hidden>Refresh</button>
       </div>
-      <p class="hint">Every report submitted from any phone, saved to the company Google Drive.</p>
+      <p class="hint">Every report submitted from any device, saved to the company Google Drive.</p>
       <form id="unlockForm" class="unlock" hidden>
         <input type="password" id="passcodeInput" placeholder="Passcode" aria-label="Passcode" autocomplete="current-password">
         <button type="submit" class="btn primary small">Unlock</button>
       </form>
       <p class="error" id="sharedError" hidden></p>
+      <div id="pendingBox" hidden>
+        <h3 class="sub-h">Not sent yet (saved on this device)</h3>
+        <div id="reportList" class="report-list"></div>
+      </div>
       <div id="sharedList" class="report-list"></div>
       <p class="hint" id="sharedEmpty" hidden></p>
-    </section>
-
-    <section class="card">
-      <h2>On this phone</h2>
-      <p class="hint">Reports submitted from this phone, including any that didn't email.</p>
-      <div id="reportList" class="report-list"></div>
-      <p class="hint" id="reportEmpty">No reports yet. Reports appear here after you submit them.</p>
     </section>
   </main>
 

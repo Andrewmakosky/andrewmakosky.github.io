@@ -87,15 +87,23 @@
     manual: "Saved — email it from your phone",
   };
 
+  // Reports kept on this device that never reached the office (no signal, etc.).
+  // Everything that was sent is in the shared list instead.
+  function pendingReports() {
+    return savedReports.filter(function (r) { return r.status !== "sent"; });
+  }
+
+  function updateCount() {
+    var n = pendingReports().length + sharedReports.length;
+    $("reportCount").textContent = n ? n : "";
+  }
+
   function renderReports() {
-    $("reportCount").textContent = savedReports.length ? savedReports.length : "";
-    var list = savedReports.filter(matchesSearch);
+    updateCount();
+    var list = pendingReports().filter(matchesSearch);
     var box = $("reportList");
     box.innerHTML = "";
-    $("reportEmpty").hidden = list.length > 0;
-    $("reportEmpty").textContent = savedReports.length
-      ? "No saved reports match your search."
-      : "No reports yet. Reports appear here after you submit them.";
+    $("pendingBox").hidden = !list.length;
 
     list.forEach(function (r) {
       var el = document.createElement("div");
@@ -145,7 +153,7 @@
       editBtn.hidden = !r.state;   // reports from before editing existed can't be reopened
       editBtn.addEventListener("click", function () { editReport(r); });
       el.querySelector('[data-act="delete"]').addEventListener("click", function () {
-        if (confirm("Delete the saved report for unit " + r.unit + " from this phone?")) deleteReport(r.id);
+        if (confirm("Delete the unsent report for unit " + r.unit + " from this device?")) deleteReport(r.id);
       });
       box.appendChild(el);
     });
@@ -169,11 +177,12 @@
     btn.textContent = "Sending…";
     blobToBase64(r.blob).then(function (b64) {
       // Resend goes to the office list only, not to one-time contacts again.
-      return sendAuto({ subject: r.subject, summary: r.summary, extraTo: [] }, { filename: r.filename, base64: b64 }, reportMeta(r));
+      return sendAuto({ subject: r.subject, summary: r.summary, extraTo: [] }, { filename: r.filename, base64: b64 }, reportMeta(r), r.state);
     }).then(function () {
       r.status = "sent";
       putReport(r);
-      alert("Report for unit " + r.unit + " was emailed to the office.");
+      toast("Report for unit " + r.unit + " was emailed to the office.");
+      loadShared();
     }).catch(function () {
       alert("Couldn't send right now. Check your connection and try again.");
       btn.disabled = false;
@@ -191,6 +200,7 @@
     return {
       createdAt: rec.createdAt, unit: rec.unit, company: rec.company, vehicleType: rec.vehicleType,
       result: rec.result, inspector: rec.inspector, kind: rec.kind,
+      reportId: rec.id, originalAt: rec.originalAt,
     };
   }
 
@@ -221,8 +231,11 @@
     setSharedState("loading");
     sharedGet({ action: "list", passcode: pass }).then(function (j) {
       if (j.ok && Array.isArray(j.reports)) {
-        sharedReports = j.reports;
+        // Older script versions identify reports by their PDF file ID.
+        sharedReports = j.reports.map(function (r) { r.reportId = r.reportId || r.id; return r; });
+        sharedVersion = j.version || 3;
         setSharedState("ready");
+        if (sharedVersion < 4) setSharedState("ready", "Update the Google email sender to turn on Resend, Edit and Delete here.");
         renderShared();
       } else if (j.ok) {
         setSharedState("error", "The Google email sender needs the latest update before reports can be shared between devices.");
@@ -247,27 +260,114 @@
     return isNaN(d) ? "" : d.toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
   }
 
+  var sharedVersion = 0;   // email sender script version that served the list
+
   function renderShared() {
+    updateCount();
     var list = sharedReports.filter(matchesSearch);
     var box = $("sharedList");
     box.innerHTML = "";
+    if ($("unlockForm").hidden === false) return;
     $("sharedEmpty").hidden = list.length > 0;
     $("sharedEmpty").textContent = sharedReports.length ? "No reports match your search." : "No reports have been saved yet.";
+    var canManage = sharedVersion >= 4;
     list.forEach(function (r) {
       var el = document.createElement("div");
       el.className = "report";
       el.innerHTML =
         '<div class="report-top"><div><div class="report-title"></div><div class="report-meta"></div></div>' +
         '<span class="badge"></span></div>' +
-        '<div class="report-actions"><button type="button" class="btn ghost">Open PDF</button></div>';
+        '<div class="report-actions">' +
+          '<button type="button" class="btn ghost" data-act="open">Open PDF</button>' +
+          '<button type="button" class="btn ghost" data-act="share">Share</button>' +
+          '<button type="button" class="btn ghost" data-act="resend">Resend</button>' +
+          '<button type="button" class="btn ghost" data-act="edit">Edit</button>' +
+          '<button type="button" class="btn ghost danger" data-act="delete">Delete</button>' +
+        '</div>';
       el.querySelector(".report-title").textContent = "Unit " + r.unit + " — " + r.vehicleType;
-      el.querySelector(".report-meta").textContent = [r.company, r.inspector, formatWhen(r.createdAt)].filter(Boolean).join(" · ");
+      el.querySelector(".report-meta").textContent = [r.company, r.inspector, formatWhen(r.createdAt),
+        r.originalAt ? "updated" : ""].filter(Boolean).join(" · ");
       var badge = el.querySelector(".badge");
       badge.textContent = r.result;
       badge.className = "badge " + (r.kind || "ok");
-      var btn = el.querySelector(".btn");
-      btn.addEventListener("click", function () { openSharedPdf(r, btn); });
+
+      var btns = {};
+      ["open", "share", "resend", "edit", "delete"].forEach(function (k) { btns[k] = el.querySelector('[data-act="' + k + '"]'); });
+      btns.share.hidden = !navigator.share;
+      btns.resend.hidden = btns.delete.hidden = !canManage;
+      btns.edit.hidden = !canManage || !r.hasState;
+
+      btns.open.addEventListener("click", function () {
+        busy(btns.open, "Loading…", sharedPdf(r).then(function (pdf) { downloadBlob(pdf.blob, pdf.filename); }));
+      });
+      btns.share.addEventListener("click", function () {
+        busy(btns.share, "Loading…", sharedPdf(r).then(function (pdf) {
+          var file = new File([pdf.blob], pdf.filename, { type: "application/pdf" });
+          return navigator.share({ files: [file], title: r.subject || "Inspection report" }).catch(function (err) {
+            // Some phones only allow sharing straight after a tap; the PDF is ready now.
+            if (err && err.name === "NotAllowedError") toast("PDF ready. Tap Share again.");
+          });
+        }));
+      });
+      btns.resend.addEventListener("click", function () {
+        if (!confirm("Email the report for unit " + r.unit + " to the office again?")) return;
+        busy(btns.resend, "Sending…", sharedPost({ action: "resend", id: r.reportId }).then(function () {
+          toast("Report for unit " + r.unit + " was emailed to the office.");
+        }));
+      });
+      btns.edit.addEventListener("click", function () {
+        if (formHasData() && !confirm("Replace the inspection on screen with this report to edit it? Anything not saved will be lost.")) return;
+        busy(btns.edit, "Loading…", sharedGet({ action: "state", id: r.reportId, passcode: load(PASS_KEY) || "" }).then(function (j) {
+          if (!j.ok) throw new Error(j.error || "Couldn't open this report.");
+          openForEdit({ reportId: r.reportId, originalAt: r.originalAt || r.createdAt, unit: r.unit }, j.state);
+        }));
+      });
+      btns.delete.addEventListener("click", function () {
+        if (!confirm("Delete the report for unit " + r.unit + "? It will be removed from this list on every device. (The PDF stays in the Google Drive folder.)")) return;
+        busy(btns.delete, "Deleting…", sharedPost({ action: "delete", id: r.reportId }).then(function () {
+          sharedReports = sharedReports.filter(function (x) { return x.reportId !== r.reportId; });
+          renderShared();
+        }));
+      });
       box.appendChild(el);
+    });
+  }
+
+  // Runs a shared-report action, showing progress on its button and any error.
+  function busy(btn, label, promise) {
+    var text = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = label;
+    return promise.catch(function (err) {
+      alert((err && err.message) || "Something went wrong. Check your connection and try again.");
+    }).then(function () {
+      btn.disabled = false;
+      btn.textContent = text;
+    });
+  }
+
+  function sharedPost(body) {
+    body.passcode = load(PASS_KEY) || "";
+    return fetch(CFG.emailServiceUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(body),
+    }).then(function (res) { return res.json(); }).then(function (j) {
+      if (!j.ok) throw new Error(j.error || "That didn't work.");
+      return j;
+    });
+  }
+
+  function sharedPdf(r) {
+    var name = "Inspection_Unit-" + String(r.unit).replace(/[^A-Za-z0-9-]+/g, "-") + ".pdf";
+    if (sharedPdfs[r.reportId]) return Promise.resolve(sharedPdfs[r.reportId]);
+    return sharedGet({ action: "pdf", id: r.reportId, passcode: load(PASS_KEY) || "" }).then(function (j) {
+      if (!j.ok) throw new Error(j.error || "Couldn't open the PDF.");
+      var bytes = atob(j.pdfBase64);
+      var arr = new Uint8Array(bytes.length);
+      for (var i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+      sharedPdfs[r.reportId] = { blob: new Blob([arr], { type: "application/pdf" }), filename: j.filename || name };
+      return sharedPdfs[r.reportId];
     });
   }
 
@@ -280,26 +380,6 @@
     a.click();
     a.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
-  }
-
-  function openSharedPdf(r, btn) {
-    var name = "Inspection_Unit-" + String(r.unit).replace(/[^A-Za-z0-9-]+/g, "-") + ".pdf";
-    if (sharedPdfs[r.id]) { downloadBlob(sharedPdfs[r.id], name); return; }
-    btn.disabled = true;
-    btn.textContent = "Loading…";
-    sharedGet({ action: "pdf", id: r.id, passcode: load(PASS_KEY) || "" }).then(function (j) {
-      if (!j.ok) throw new Error(j.error || "Couldn't open the PDF.");
-      var bytes = atob(j.pdfBase64);
-      var arr = new Uint8Array(bytes.length);
-      for (var i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
-      sharedPdfs[r.id] = new Blob([arr], { type: "application/pdf" });
-      downloadBlob(sharedPdfs[r.id], j.filename || name);
-    }).catch(function (err) {
-      alert(err.message || "Couldn't open the PDF. Check your connection.");
-    }).then(function () {
-      btn.disabled = false;
-      btn.textContent = "Open PDF";
-    });
   }
 
   // ---------- save for later / edit submitted ----------
@@ -408,11 +488,15 @@
 
   function editReport(r) {
     if (formHasData() && !confirm("Replace the inspection on screen with this report to edit it? Anything not saved will be lost.")) return;
-    applyState(r.state);
+    openForEdit({ reportId: r.id, originalAt: r.originalAt || r.createdAt, unit: r.unit }, r.state);
+  }
+
+  function openForEdit(ctx, state) {
+    applyState(state);
     // They must re-confirm the inspection after making changes.
     $("certify").checked = false;
     saveDraft();
-    setEditing({ reportId: r.id, originalAt: r.originalAt || r.createdAt, unit: r.unit });
+    setEditing(ctx);
     newTabView = "formView";
     showTab("new");
   }
@@ -1127,7 +1211,7 @@
     return !!(f && navigator.canShare && navigator.canShare({ files: [f] }));
   }
 
-  function sendAuto(r, pdf, meta) {
+  function sendAuto(r, pdf, meta, state) {
     // text/plain avoids a CORS preflight, which Apps Script can't answer.
     return fetch(CFG.emailServiceUrl, {
       method: "POST",
@@ -1140,6 +1224,7 @@
         filename: pdf.filename,
         pdfBase64: pdf.base64,
         meta: meta || {},
+        state: state,
       }),
     }).then(function (res) {
       return res.json().then(function (j) {
@@ -1264,7 +1349,7 @@
     if (CFG.emailServiceUrl && navigator.onLine !== false) {
       btn.textContent = "Sending…";
       putReport(rec);
-      sendAuto(r, pdf, reportMeta(rec)).then(function (result) {
+      sendAuto(r, pdf, reportMeta(rec), rec.state).then(function (result) {
         rec.status = "sent";
         putReport(rec);
         showDone("auto", result);

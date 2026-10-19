@@ -28,21 +28,26 @@ Progress and photos are saved on the phone as they go, so closing the app doesn'
 
 The email subject shows the same status, e.g. `[1 FAILED ITEM] Unit P-12 inspection - <inspector> - 10/12/2026`.
 
-## Save for later and editing
+## Save for later
 
-- **Save for later** (under Submit) stores the inspection on the phone, photos included, and clears the form. Saved inspections are listed at the top of **New inspection**; **Continue** reopens one exactly where it was left.
-- **Edit** on a report under **Sent reports → On this phone** reopens a submitted report. The inspector must tick the confirmation box again. Submitting sends a new email marked **[UPDATED]**, and the PDF header says "UPDATED (originally submitted …)". The phone's copy is replaced; the Drive archive keeps both versions.
-- Only reports submitted from app version v33 onward can be edited.
+**Save for later** (under Submit) stores the inspection on the phone, photos included, and clears the form. Saved inspections are listed at the top of **New inspection**; **Continue** reopens one exactly where it was left. Saved-for-later inspections stay on the phone that saved them.
 
 ## Sent reports tab
 
-The **Sent reports** tab has two lists.
+**All reports** lists every report submitted from any device. The Google email sender saves each PDF and its form answers in a Drive folder called **Inspection Reports**, and logs it in a Google Sheet called **Inspection Reports Log**. Viewing the list needs the passcode set in `VIEW_PASSCODE` in `email-sender.gs`; each device asks for it once.
 
-**All reports** shows every report submitted from any phone. The Google email sender saves each PDF in a Drive folder called **Inspection Reports** and logs it in a Google Sheet, **Inspection Reports Log**, inside that folder. Viewing the list in the app needs the passcode set in `VIEW_PASSCODE` in `email-sender.gs`. Each device asks for it once.
+Every report has these buttons, on any device:
+- **Open PDF**
+- **Share** (on phones)
+- **Resend**, which re-emails it to the office list
+- **Edit**, which reopens the full inspection. The inspector must tick the confirmation box again. Submitting sends an email marked **[UPDATED]**, and the list shows the newest version.
+- **Delete**, which removes it from the list everywhere. Its files stay in the Drive folder.
 
-**On this phone** shows reports submitted from this device, including any that didn't email. Each one has **Open PDF**, **Share**, **Resend** (office list only) and **Delete**.
+Reports logged before script version 4 can't be edited, because their answers weren't saved.
 
-A search box filters both lists by unit, company or inspector.
+If a report couldn't be emailed (no signal), it's shown under **Not sent yet** on the device that made it, with **Resend** to send it when there's a connection.
+
+A search box filters by unit, company or inspector.
 
 ### Turning on the shared list (one time)
 1. Paste the latest `email-sender.gs` into the Apps Script project, replacing everything.
