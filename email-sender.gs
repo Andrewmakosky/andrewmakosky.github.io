@@ -35,12 +35,14 @@ var FOLDER_NAME = "Inspection Reports";
 var SHEET_NAME = "Inspection Reports Log";
 
 // Bumped when the script changes, so the app can tell which version is live.
-var SCRIPT_VERSION = 4;
+var SCRIPT_VERSION = 5;
 
 var LOG_HEADERS = ["Submitted", "Unit", "Company", "Vehicle type", "Result", "Inspector", "Subject",
-  "PDF link", "File ID", "Kind", "Report ID", "Form data file ID", "Deleted", "Originally submitted"];
+  "PDF link", "File ID", "Kind", "Report ID", "Form data file ID", "Deleted", "Originally submitted",
+  "Operators", "Odometer", "Site / route", "GPS ID", "Failed items", "Failed item notes"];
 var COL = { submitted: 0, unit: 1, company: 2, type: 3, result: 4, inspector: 5, subject: 6,
-  link: 7, fileId: 8, kind: 9, reportId: 10, stateId: 11, deleted: 12, originalAt: 13 };
+  link: 7, fileId: 8, kind: 9, reportId: 10, stateId: 11, deleted: 12, originalAt: 13,
+  operators: 14, odometer: 15, site: 16, gpsId: 17, failedCount: 18, failedNotes: 19 };
 
 function doPost(e) {
   try {
@@ -151,6 +153,12 @@ function archiveReport(pdf, subject, meta, state) {
   row[COL.stateId] = stateId;
   row[COL.deleted] = "";
   row[COL.originalAt] = meta.originalAt ? new Date(meta.originalAt) : "";
+  row[COL.operators] = String(meta.operators || "");
+  row[COL.odometer] = String(meta.odometer || "");
+  row[COL.site] = String(meta.site || "");
+  row[COL.gpsId] = String(meta.gpsId || "");
+  row[COL.failedCount] = meta.failedCount == null ? "" : Number(meta.failedCount) || 0;
+  row[COL.failedNotes] = String(meta.failedNotes || "");
   getSheet().appendRow(row);
 }
 
@@ -186,6 +194,10 @@ function listReports() {
       unit: r[COL.unit], company: r[COL.company], vehicleType: r[COL.type], result: r[COL.result],
       inspector: r[COL.inspector], subject: r[COL.subject], kind: r[COL.kind],
       hasState: !!r[COL.stateId],
+      // Details for the Excel export; blank on rows logged before version 5.
+      hasDetails: r[COL.failedCount] !== "",
+      operators: r[COL.operators], odometer: r[COL.odometer], site: r[COL.site], gpsId: r[COL.gpsId],
+      failedCount: r[COL.failedCount], failedNotes: r[COL.failedNotes],
     };
   });
 }

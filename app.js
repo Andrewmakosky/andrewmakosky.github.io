@@ -100,7 +100,7 @@
 
   function renderReports() {
     updateCount();
-    var list = pendingReports().filter(matchesSearch);
+    var list = pendingReports().filter(matchesFilters);
     var box = $("reportList");
     box.innerHTML = "";
     $("pendingBox").hidden = !list.length;
@@ -197,11 +197,121 @@
 
   // Details the email sender logs alongside the saved PDF.
   function reportMeta(rec) {
-    return {
+    var meta = {
       createdAt: rec.createdAt, unit: rec.unit, company: rec.company, vehicleType: rec.vehicleType,
       result: rec.result, inspector: rec.inspector, kind: rec.kind,
       reportId: rec.id, originalAt: rec.originalAt,
     };
+    var details = rec.state ? summarizeData(rec.state.data) : null;
+    if (details) Object.keys(details).forEach(function (k) { meta[k] = details[k]; });
+    return meta;
+  }
+
+  // Operators, odometer, site, GPS ID and failed-item notes from saved form
+  // answers (formData() shape), for the log and the Excel export.
+  function summarizeData(data) {
+    if (!data) return null;
+    var cat = data.vehicleCategory;
+    var active = function (x) { return !x.onlyFor || x.onlyFor === cat; };
+    var fails = [], gps = "";
+    (CFG.checklist || []).forEach(function (sec, i) {
+      if (!active(sec)) return;
+      sec.items.forEach(function (x, j) {
+        var def = itemDef(x);
+        if (!active(def)) return;
+        var id = itemId(sec, i, j);
+        if (data[id] === "Fail") fails.push(def.name + ": " + (data[id + "_note"] || "").trim());
+        if (def.passInDetails && data[id] === "Pass") gps = (data[id + "_pass"] || "").trim();
+      });
+    });
+    return {
+      operators: (data.operators || []).map(function (o) { return o.name; }).filter(Boolean).join(", "),
+      odometer: data.odometer || "",
+      site: data.site || "",
+      gpsId: gps,
+      failedCount: fails.length,
+      failedNotes: fails.join("\n"),
+    };
+  }
+
+  // ---------- filter & Excel export ----------
+  function submittedAt(r) { return r.originalAt || r.createdAt; }
+
+  function localDay(iso) {
+    var d = new Date(iso);
+    if (isNaN(d)) return "";
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
+
+  function matchesFilters(r) {
+    if (!matchesSearch(r)) return false;
+    var day = localDay(submittedAt(r));
+    if ($("filterFrom").value && day < $("filterFrom").value) return false;
+    if ($("filterTo").value && day > $("filterTo").value) return false;
+    if ($("filterStatus").value && r.result !== $("filterStatus").value) return false;
+    return true;
+  }
+
+  function updateFilterCount() {
+    var unlocked = $("unlockForm").hidden && sharedVersion > 0;   // a list has loaded
+    var n = sharedReports.filter(matchesFilters).length;
+    $("exportBtn").disabled = !n;
+    $("filterCount").textContent = !unlocked ? "Unlock All reports below to export."
+      : n + " report" + (n === 1 ? "" : "s") + " match these filters.";
+  }
+
+  function exportExcel() {
+    var list = sharedReports.filter(matchesFilters);
+    if (!list.length) return;
+    var btn = $("exportBtn");
+    var label = btn.textContent;
+    btn.disabled = true;
+    // Reports logged before details were recorded: work them out from their saved answers.
+    var need = list.filter(function (r) { return !r.hasDetails && r.hasState; });
+    var done = 0;
+    var chain = Promise.resolve();
+    need.forEach(function (r) {
+      chain = chain.then(function () {
+        btn.textContent = "Preparing " + (++done) + " of " + need.length + "…";
+        return sharedGet({ action: "state", id: r.reportId, passcode: load(PASS_KEY) || "" }).then(function (j) {
+          if (j.ok && j.state) {
+            var d = summarizeData(j.state.data);
+            Object.keys(d).forEach(function (k) { r[k] = d[k]; });
+            r.hasDetails = true;
+          }
+        }).catch(function () { /* export it without details */ });
+      });
+    });
+    chain.then(function () {
+      var when = function (iso) { return iso ? formatWhen(iso) : ""; };
+      var rows = [["Date submitted", "Last updated", "Company", "Vehicle type", "Unit / vehicle #", "Operator(s)",
+        "Odometer", "Site / route assigned", "Inspector", "GPS ID", "Status", "Failed items", "Failed item notes"]];
+      list.forEach(function (r) {
+        rows.push([
+          when(submittedAt(r)),
+          r.originalAt ? when(r.createdAt) : "",
+          r.company || "", r.vehicleType || "", r.unit || "", r.operators || "",
+          r.odometer || "", r.site || "", r.inspector || "", r.gpsId || "",
+          r.result || "",
+          r.hasDetails ? Number(r.failedCount) || 0 : "",
+          r.hasDetails ? (r.failedNotes || "") : "Details not available (submitted before they were recorded)",
+        ]);
+      });
+      var from = $("filterFrom").value, to = $("filterTo").value, status = $("filterStatus").value;
+      var name = "Inspection_Report" +
+        (from || to ? "_" + (from || "start") + "_to_" + (to || "today") : "_" + localDay(new Date().toISOString())) +
+        (status ? "_" + status.replace(/\s+/g, "-") : "") + ".xlsx";
+      downloadBlob(window.buildXlsx(rows, {
+        sheetName: "Inspections",
+        widths: [20, 20, 22, 32, 14, 24, 12, 24, 18, 14, 22, 10, 60],
+      }), name);
+      toast("Excel report downloaded (" + list.length + " report" + (list.length === 1 ? "" : "s") + ").");
+    }).catch(function (err) {
+      alert("Couldn't create the Excel report: " + (err && err.message || err));
+    }).then(function () {
+      btn.textContent = label;
+      updateFilterCount();
+    });
   }
 
   // ---------- shared reports (Google Drive archive, all devices) ----------
@@ -222,6 +332,7 @@
     $("sharedError").textContent = msg || "";
     if (state !== "ready") { $("sharedList").innerHTML = ""; $("sharedEmpty").hidden = state !== "loading"; }
     if (state === "loading") $("sharedEmpty").textContent = "Loading reports…";
+    updateFilterCount();
   }
 
   function loadShared() {
@@ -264,12 +375,13 @@
 
   function renderShared() {
     updateCount();
-    var list = sharedReports.filter(matchesSearch);
+    updateFilterCount();
+    var list = sharedReports.filter(matchesFilters);
     var box = $("sharedList");
     box.innerHTML = "";
     if ($("unlockForm").hidden === false) return;
     $("sharedEmpty").hidden = list.length > 0;
-    $("sharedEmpty").textContent = sharedReports.length ? "No reports match your search." : "No reports have been saved yet.";
+    $("sharedEmpty").textContent = sharedReports.length ? "No reports match your search or filters." : "No reports have been saved yet.";
     var canManage = sharedVersion >= 4;
     list.forEach(function (r) {
       var el = document.createElement("div");
@@ -1505,6 +1617,10 @@
     loadShared();
   });
   $("sharedRefresh").addEventListener("click", loadShared);
+  ["filterFrom", "filterTo", "filterStatus"].forEach(function (id) {
+    $(id).addEventListener("change", function () { renderReports(); renderShared(); });
+  });
+  $("exportBtn").addEventListener("click", exportExcel);
   $("saveLaterBtn").addEventListener("click", saveForLater);
   $("editingCancel").addEventListener("click", function () {
     if (confirm("Clear this form and start a new inspection? Changes that weren't saved will be lost.")) clearForm();
