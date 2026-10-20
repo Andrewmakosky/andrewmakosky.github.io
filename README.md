@@ -49,6 +49,16 @@ If a report couldn't be emailed (no signal), it's shown under **Not sent yet** o
 
 A search box filters by unit, company or inspector.
 
+### Filter & export to Excel
+
+At the top of **Sent reports**, filter by **Submitted from / to** dates and **Inspection result**. The list follows the filters. **Download Excel report** creates an `.xlsx` with one row per matching report. Columns:
+- date submitted and last updated
+- company, vehicle type, unit #, operators, odometer, site / route assigned
+- inspector and GPS ID
+- status (inspection result), number of failed items, and every failed item's note
+
+With script version 5, these details are also logged in the Google Sheet, which makes exports faster. For reports logged earlier, the app reads them from each report's saved answers. Reports from before answers were saved show "Details not available".
+
 ### Turning on the shared list (one time)
 1. Paste the latest `email-sender.gs` into the Apps Script project, replacing everything.
 2. Set `VIEW_PASSCODE` to a passcode of your choice and save.

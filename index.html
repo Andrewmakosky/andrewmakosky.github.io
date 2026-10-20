@@ -154,6 +154,31 @@
   <main id="reportsView" hidden>
     <input type="search" id="reportSearch" placeholder="Search unit, company, inspector…" aria-label="Search reports">
 
+    <section class="card" id="filterCard">
+      <h2>Filter &amp; export</h2>
+      <div class="row">
+        <label class="field">
+          <span>Submitted from</span>
+          <input type="date" id="filterFrom">
+        </label>
+        <label class="field">
+          <span>Submitted to</span>
+          <input type="date" id="filterTo">
+        </label>
+      </div>
+      <label class="field">
+        <span>Inspection result</span>
+        <select id="filterStatus">
+          <option value="">All results</option>
+          <option>Approved</option>
+          <option>Conditional Approval</option>
+          <option>Rejected</option>
+        </select>
+      </label>
+      <button type="button" class="btn primary" id="exportBtn">Download Excel report</button>
+      <p class="hint" id="filterCount"></p>
+    </section>
+
     <section class="card" id="sharedCard">
       <div class="card-head">
         <h2>All reports</h2>
@@ -178,6 +203,7 @@
   <script src="config.js"></script>
   <script src="vendor/jspdf.umd.min.js"></script>
   <script src="report.js"></script>
+  <script src="xlsx.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

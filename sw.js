@@ -8,6 +8,7 @@ var FILES = [
   "styles.css",
   "app.js",
   "report.js",
+  "xlsx.js",
   "vendor/jspdf.umd.min.js",
   "config.js",
   "version.js",

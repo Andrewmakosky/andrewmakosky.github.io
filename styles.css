@@ -265,6 +265,9 @@ h2 + .item[hidden] + .item { border-top: 0; padding-top: 0; }
   font: inherit; font-size: 15px; font-weight: 700; color: var(--focus);
   background: none; border: 0; padding: 6px 0; cursor: pointer;
 }
+#filterCard .row { margin-bottom: 0; }
+#filterCard input[type="date"] { min-height: 48px; }
+#filterCount { margin: 10px 0 0; text-align: center; }
 .sub-h { font-size: 15px; color: var(--fail); margin: 4px 0 8px; }
 #pendingBox { margin-bottom: 14px; }
 .unlock { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 10px; }
