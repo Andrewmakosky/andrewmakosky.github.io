@@ -7,8 +7,14 @@ window.APP_CONFIG = {
   // Name shown at the top of the app and on the PDF report.
   companyName: "Creative Snow by Cowbay",
 
-  // Title shown under the logo at the top of the app.
-  appTitle: "Creative Snow Vehicle Inspection Checklist",
+  // The two kinds of inspection. Opening the app asks which one this is.
+  // label is the button and the name on the report; title is shown under the logo.
+  inspectionTypes: {
+    snow: { label: "Snow Inspection", title: "Creative Snow Vehicle Inspection Checklist" },
+    general: { label: "General Vehicle Inspection", title: "Vehicle Inspection Checklist" },
+  },
+  // Title under the logo before an inspection type is picked.
+  appTitle: "Vehicle Inspection Checklist",
 
   // Where completed reports are emailed. Separate multiple addresses with commas.
   reportEmail: "andrew.makosky@cowbaycontracting.com, patricia.vallejo@cowbaycontracting.com, mark.dalonzo@cowbaycontracting.com, brian.dalonzo@cowbaycontracting.com, ddalonzo@cowbaycontracting.com",
@@ -57,7 +63,7 @@ window.APP_CONFIG = {
     ],
   },
 
-  // The checklist. Add, remove or rename sections and items freely.
+  // The SNOW inspection checklist. Add, remove or rename sections and items freely.
   // Each section has a number shown in its heading (e.g. "5a"); keep them
   // unique, since saved answers and photos are tied to them.
   // A section or item with onlyFor: "Truck" or "Machine" only appears for
@@ -184,9 +190,53 @@ window.APP_CONFIG = {
     },
   ],
 
-  // Shown above the sign-off in the app and printed on every report.
+  // The GENERAL vehicle inspection checklist. Same rules as the snow one.
+  // Item IDs start with "g", so the two checklists' answers never mix.
+  // PLACEHOLDER: replace with the real general inspection list.
+  generalChecklist: [
+    {
+      number: "1",
+      section: "Paperwork",
+      items: [
+        "Registration in vehicle",
+        "Insurance card in vehicle",
+        "State inspection current",
+      ],
+    },
+    {
+      number: "2",
+      section: "Lights & visibility",
+      items: [
+        "Headlights, brake lights & turn signals",
+        "Windshield, wipers & mirrors",
+      ],
+    },
+    {
+      number: "3",
+      section: "Tires, brakes & fluids",
+      items: [
+        "Tires & wheels",
+        "Brakes",
+        "Fluid levels / no leaks",
+      ],
+    },
+    {
+      number: "4",
+      section: "Safety equipment",
+      items: [
+        "Horn & backup alarm",
+        "Seat belts",
+        "Fire extinguisher & first aid kit",
+      ],
+    },
+  ],
+
+  // Shown above the sign-off on SNOW inspections and printed on their reports.
   policy: [
     "No vehicle or equipment will be dispatched unless it has passed this inspection and has a current Cow Bay decal. Any vehicle with an unsafe condition, broken required equipment, or missing GPS or ID may be pulled from service until it's fixed.",
     "A Cow Bay decal will be applied to certify that the vehicle is approved for use. The decal does not guarantee approval for the full season. If the vehicle's condition changes, the decal can be revoked.",
   ],
+
+  // Same, for GENERAL inspections. Leave empty for none.
+  generalPolicy: [],
 };

@@ -34,12 +34,23 @@
       <div id="draftList" class="report-list"></div>
     </section>
 
+    <section class="card" id="kindCard" hidden>
+      <h2 class="center">What are you inspecting?</h2>
+      <p class="hint center">Is this for a Snow Inspection or a General Vehicle Inspection?</p>
+      <div class="kind-choices" id="kindChoices"></div>
+    </section>
+
     <div class="editing-banner" id="editingBanner" hidden>
       <span id="editingText"></span>
       <button type="button" class="link-btn" id="editingCancel">Start over</button>
     </div>
 
     <form id="checkForm" novalidate>
+      <input type="hidden" name="inspectionKind" id="inspectionKind">
+      <div class="kind-bar">
+        <span id="kindText"></span>
+        <button type="button" class="link-btn" id="kindChange">Change</button>
+      </div>
       <section class="card">
         <h2>Vehicle &amp; operators</h2>
         <label class="field">
@@ -166,6 +177,10 @@
           <input type="date" id="filterTo">
         </label>
       </div>
+      <label class="field">
+        <span>Inspection type</span>
+        <select id="filterKind"></select>
+      </label>
       <label class="field">
         <span>Inspection result</span>
         <select id="filterStatus">

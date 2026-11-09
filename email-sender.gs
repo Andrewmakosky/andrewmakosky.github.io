@@ -35,14 +35,14 @@ var FOLDER_NAME = "Inspection Reports";
 var SHEET_NAME = "Inspection Reports Log";
 
 // Bumped when the script changes, so the app can tell which version is live.
-var SCRIPT_VERSION = 5;
+var SCRIPT_VERSION = 6;
 
 var LOG_HEADERS = ["Submitted", "Unit", "Company", "Vehicle type", "Result", "Inspector", "Subject",
   "PDF link", "File ID", "Kind", "Report ID", "Form data file ID", "Deleted", "Originally submitted",
-  "Operators", "Odometer", "Site / route", "GPS ID", "Failed items", "Failed item notes"];
+  "Operators", "Odometer", "Site / route", "GPS ID", "Failed items", "Failed item notes", "Inspection type"];
 var COL = { submitted: 0, unit: 1, company: 2, type: 3, result: 4, inspector: 5, subject: 6,
   link: 7, fileId: 8, kind: 9, reportId: 10, stateId: 11, deleted: 12, originalAt: 13,
-  operators: 14, odometer: 15, site: 16, gpsId: 17, failedCount: 18, failedNotes: 19 };
+  operators: 14, odometer: 15, site: 16, gpsId: 17, failedCount: 18, failedNotes: 19, inspectionType: 20 };
 
 function doPost(e) {
   try {
@@ -159,6 +159,7 @@ function archiveReport(pdf, subject, meta, state) {
   row[COL.gpsId] = String(meta.gpsId || "");
   row[COL.failedCount] = meta.failedCount == null ? "" : Number(meta.failedCount) || 0;
   row[COL.failedNotes] = String(meta.failedNotes || "");
+  row[COL.inspectionType] = String(meta.inspectionType || "");
   getSheet().appendRow(row);
 }
 
@@ -198,6 +199,7 @@ function listReports() {
       hasDetails: r[COL.failedCount] !== "",
       operators: r[COL.operators], odometer: r[COL.odometer], site: r[COL.site], gpsId: r[COL.gpsId],
       failedCount: r[COL.failedCount], failedNotes: r[COL.failedNotes],
+      inspectionType: r[COL.inspectionType] || "",
     };
   });
 }

@@ -8,6 +8,8 @@ It's a web app hosted on GitHub Pages, so there's nothing to download from an ap
 
 ## How it works for drivers
 
+Opening the app first asks **"Is this for a Snow Inspection or a General Vehicle Inspection?"** Each one has its own checklist (`checklist` and `generalChecklist` in `config.js`) and its own policy text (`policy` and `generalPolicy`). The chosen type shows at the top of the form, and **Change** goes back to the choice. Answers aren't lost by changing. The report title, the email subject (e.g. "… general vehicle inspection …") and the PDF file name say which type it was. On **Sent reports**, you can filter by **Inspection type**, and the Excel report has an **Inspection type** column. Reports from before this change count as snow inspections.
+
 1. They enter the **company**, the **operators for this vehicle** with a 📷 photo of each operator's driver's license (**+ Add another operator** for more), the vehicle type (tap **Truck** or **Machine**, then pick from the list; **Other** asks what kind), the unit #, a 📷 **vehicle photo**, the odometer, and site/route.
 2. They mark each item **Pass / Fail / N/A**. A **Fail** requires a short note.
 3. The 📷 button on any item adds photos (camera or photo library). There's also a photo button under **Other notes / damage**.
@@ -57,7 +59,7 @@ At the top of **Sent reports**, filter by **Submitted from / to** dates and **In
 - inspector and GPS ID
 - status (inspection result), number of failed items, and every failed item's note
 
-With script version 5, these details are also logged in the Google Sheet, which makes exports faster. For reports logged earlier, the app reads them from each report's saved answers. Reports from before answers were saved show "Details not available".
+With script version 5 or later (version 6 adds the inspection type), these details are also logged in the Google Sheet, which makes exports faster. For reports logged earlier, the app reads them from each report's saved answers. Reports from before answers were saved show "Details not available".
 
 ### Turning on the shared list (one time)
 1. Paste the latest `email-sender.gs` into the Apps Script project, replacing everything.
@@ -99,8 +101,9 @@ If you later change `email-sender.gs`, use **Deploy**, then **Manage deployments
 - **`reportEmail`**: where reports go
 - **`emailServiceUrl`**: the Apps Script URL for automatic emailing (blank = manual)
 - **`vehicleTypes`**: the Truck and Machine lists drivers pick from
-- **`checklist`**: sections and items. Add, remove or rename freely.
-- **`policy`**: the paragraphs shown before sign-off and printed on the report
+- **`inspectionTypes`**: the button names and titles for the Snow and General inspections
+- **`checklist`** / **`generalChecklist`**: sections and items for each type. Add, remove or rename freely.
+- **`policy`** / **`generalPolicy`**: the paragraphs shown before sign-off and printed on the report, for each type
 
 After changing any file, bump `APP_VERSION` in `version.js` (e.g. `v9` to `v10`) so phones pick up the new version. The version shows at the bottom of the form, which is a quick way to check a phone is up to date.
 
