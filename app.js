@@ -13,6 +13,29 @@
   var photoTarget = null;
   var last = null;           // { report, pdf }
 
+  // ---------- inspection types: snow or general ----------
+  // Both checklists live in one list of sections, tagged with their kind;
+  // only the chosen kind's sections are shown, checked and reported.
+  var KINDS = CFG.inspectionTypes || { snow: { label: "Snow Inspection" } };
+  var SECTIONS = [];
+  [["snow", CFG.checklist, "s"], ["general", CFG.generalChecklist, "g"]].forEach(function (k) {
+    (k[1] || []).forEach(function (sec, n) {
+      SECTIONS.push(Object.assign({}, sec, { kind: k[0], prefix: k[2], num: sec.number || String(n + 1) }));
+    });
+  });
+
+  function currentKind() { return $("inspectionKind").value; }
+  function kindLabel(k) { return (KINDS[k] || {}).label || ""; }
+  function kindPolicy(k) { return (k === "general" ? CFG.generalPolicy : CFG.policy) || []; }
+
+  // Which kind a report is. Reports logged before this existed are snow.
+  function reportKind(r) {
+    var t = String(r.inspectionType || "");
+    var match = Object.keys(KINDS).filter(function (k) { return kindLabel(k) === t; })[0];
+    if (match) return match;
+    return /general/i.test(r.subject || "") ? "general" : "snow";
+  }
+
   // ---------- storage (wrapped: private mode can throw) ----------
   function store(key, val) {
     try {
@@ -120,7 +143,7 @@
           '<button type="button" class="btn ghost danger" data-act="delete">Delete</button>' +
         '</div>';
       el.querySelector(".report-title").textContent = "Unit " + r.unit + " — " + r.vehicleType;
-      el.querySelector(".report-meta").textContent = [r.company, r.inspector, new Date(r.createdAt).toLocaleString(undefined, {
+      el.querySelector(".report-meta").textContent = [kindLabel(reportKind(r)), r.company, r.inspector, new Date(r.createdAt).toLocaleString(undefined, {
         month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
       })].filter(Boolean).join(" · ");
       var badge = el.querySelector(".badge");
@@ -199,7 +222,7 @@
   function reportMeta(rec) {
     var meta = {
       createdAt: rec.createdAt, unit: rec.unit, company: rec.company, vehicleType: rec.vehicleType,
-      result: rec.result, inspector: rec.inspector, kind: rec.kind,
+      result: rec.result, inspector: rec.inspector, kind: rec.kind, inspectionType: rec.inspectionType,
       reportId: rec.id, originalAt: rec.originalAt,
     };
     var details = rec.state ? summarizeData(rec.state.data) : null;
@@ -212,9 +235,10 @@
   function summarizeData(data) {
     if (!data) return null;
     var cat = data.vehicleCategory;
-    var active = function (x) { return !x.onlyFor || x.onlyFor === cat; };
+    var kind = data.inspectionKind || "snow";
+    var active = function (x) { return (!x.kind || x.kind === kind) && (!x.onlyFor || x.onlyFor === cat); };
     var fails = [], gps = "";
-    (CFG.checklist || []).forEach(function (sec, i) {
+    SECTIONS.forEach(function (sec, i) {
       if (!active(sec)) return;
       sec.items.forEach(function (x, j) {
         var def = itemDef(x);
@@ -225,6 +249,7 @@
       });
     });
     return {
+      inspectionType: kindLabel(kind),
       operators: (data.operators || []).map(function (o) { return o.name; }).filter(Boolean).join(", "),
       odometer: data.odometer || "",
       site: data.site || "",
@@ -249,6 +274,7 @@
     if ($("filterFrom").value && day < $("filterFrom").value) return false;
     if ($("filterTo").value && day > $("filterTo").value) return false;
     if ($("filterStatus").value && r.result !== $("filterStatus").value) return false;
+    if ($("filterKind").value && reportKind(r) !== $("filterKind").value) return false;
     return true;
   }
 
@@ -284,12 +310,13 @@
     });
     chain.then(function () {
       var when = function (iso) { return iso ? formatWhen(iso) : ""; };
-      var rows = [["Date submitted", "Last updated", "Company", "Vehicle type", "Unit / vehicle #", "Operator(s)",
+      var rows = [["Date submitted", "Last updated", "Inspection type", "Company", "Vehicle type", "Unit / vehicle #", "Operator(s)",
         "Odometer", "Site / route assigned", "Inspector", "GPS ID", "Status", "Failed items", "Failed item notes"]];
       list.forEach(function (r) {
         rows.push([
           when(submittedAt(r)),
           r.originalAt ? when(r.createdAt) : "",
+          kindLabel(reportKind(r)),
           r.company || "", r.vehicleType || "", r.unit || "", r.operators || "",
           r.odometer || "", r.site || "", r.inspector || "", r.gpsId || "",
           r.result || "",
@@ -298,12 +325,13 @@
         ]);
       });
       var from = $("filterFrom").value, to = $("filterTo").value, status = $("filterStatus").value;
-      var name = "Inspection_Report" +
+      var kindName = $("filterKind").value ? "_" + kindLabel($("filterKind").value).replace(/\s+/g, "-") : "";
+      var name = "Inspection_Report" + kindName +
         (from || to ? "_" + (from || "start") + "_to_" + (to || "today") : "_" + localDay(new Date().toISOString())) +
         (status ? "_" + status.replace(/\s+/g, "-") : "") + ".xlsx";
       downloadBlob(window.buildXlsx(rows, {
         sheetName: "Inspections",
-        widths: [20, 20, 22, 32, 14, 24, 12, 24, 18, 14, 22, 10, 60],
+        widths: [20, 20, 24, 22, 32, 14, 24, 12, 24, 18, 14, 22, 10, 60],
       }), name);
       toast("Excel report downloaded (" + list.length + " report" + (list.length === 1 ? "" : "s") + ").");
     }).catch(function (err) {
@@ -397,7 +425,7 @@
           '<button type="button" class="btn ghost danger" data-act="delete">Delete</button>' +
         '</div>';
       el.querySelector(".report-title").textContent = "Unit " + r.unit + " — " + r.vehicleType;
-      el.querySelector(".report-meta").textContent = [r.company, r.inspector, formatWhen(r.createdAt),
+      el.querySelector(".report-meta").textContent = [kindLabel(reportKind(r)), r.company, r.inspector, formatWhen(r.createdAt),
         r.originalAt ? "updated" : ""].filter(Boolean).join(" · ");
       var badge = el.querySelector(".badge");
       badge.textContent = r.result;
@@ -636,12 +664,14 @@
   }
 
   // ---------- build the form ----------
-  function secNumber(sec, i) { return sec.number || String(i + 1); }
-  function itemId(sec, i, j) { return "s" + secNumber(sec, i) + "_" + j; }
+  function secNumber(sec) { return sec.num; }
+  function itemId(sec, i, j) { return sec.prefix + sec.num + "_" + j; }
 
-  // Sections and items marked onlyFor: "Truck" / "Machine" apply only to that category.
+  // Only the chosen inspection type's sections apply, and sections and items
+  // marked onlyFor: "Truck" / "Machine" apply only to that category.
   function sectionActive(sec) {
-    return !sec.onlyFor || sec.onlyFor === valueOf("vehicleCategory");
+    return (!sec.kind || sec.kind === currentKind()) &&
+      (!sec.onlyFor || sec.onlyFor === valueOf("vehicleCategory"));
   }
 
   // Checklist items are a name, or { name, passInput, onlyFor }.
@@ -649,7 +679,24 @@
   function itemDef(x) { return typeof x === "string" ? { name: x } : x; }
 
   function build() {
-    if (CFG.appTitle) $("brandName").textContent = CFG.appTitle;
+    Object.keys(KINDS).forEach(function (k) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "btn primary";
+      b.textContent = kindLabel(k);
+      b.addEventListener("click", function () { setKind(k); });
+      $("kindChoices").appendChild(b);
+
+      var o = document.createElement("option");
+      o.value = k;
+      o.textContent = kindLabel(k);
+      $("filterKind").appendChild(o);
+    });
+    var all = document.createElement("option");
+    all.value = "";
+    all.textContent = "All inspection types";
+    $("filterKind").insertBefore(all, $("filterKind").firstChild);
+    $("filterKind").value = "";
 
     var cats = $("vehicleCategory");
     Object.keys(CFG.vehicleTypes || {}).forEach(function (c) {
@@ -661,12 +708,12 @@
     });
 
     var root = $("checklist");
-    (CFG.checklist || []).forEach(function (sec, i) {
+    SECTIONS.forEach(function (sec, i) {
       var card = document.createElement("section");
       card.className = "card";
       card.dataset.section = i;
       var h = document.createElement("h2");
-      h.textContent = secNumber(sec, i) + ". " + sec.section;
+      h.textContent = secNumber(sec) + ". " + sec.section;
       card.appendChild(h);
 
       sec.items.forEach(function (x, j) {
@@ -711,19 +758,38 @@
       });
       root.appendChild(card);
     });
+  }
 
+  var shownKind = null;
+  // Title, type bar and policy text for the chosen inspection type.
+  function showKind() {
+    var k = currentKind();
+    $("kindCard").hidden = !!k;
+    form.hidden = !k;
+    if (k === shownKind) return;
+    shownKind = k;
+    $("brandName").textContent = (KINDS[k] || {}).title || CFG.appTitle || "";
+    $("kindText").textContent = kindLabel(k);
     var pol = $("policy");
-    (CFG.policy || []).forEach(function (t) {
+    pol.innerHTML = "";
+    kindPolicy(k).forEach(function (t) {
       var p = document.createElement("p");
       p.textContent = t;
       pol.appendChild(p);
     });
-    pol.hidden = !(CFG.policy || []).length;
+    pol.hidden = !kindPolicy(k).length;
+  }
+
+  function setKind(k) {
+    $("inspectionKind").value = k;
+    refresh();
+    saveDraft();
+    window.scrollTo(0, 0);
   }
 
   function allItems() {
     var out = [];
-    (CFG.checklist || []).forEach(function (sec, i) {
+    SECTIONS.forEach(function (sec, i) {
       if (!sectionActive(sec)) return;
       sec.items.forEach(function (x, j) {
         var def = itemDef(x);
@@ -978,10 +1044,11 @@
   }
 
   function refresh() {
+    showKind();
     updateLabels();
     $("vehicleTypeField").hidden = !valueOf("vehicleCategory");
     $("vehicleOtherField").hidden = $("vehicleTypeField").hidden || $("vehicleType").value !== "Other";
-    (CFG.checklist || []).forEach(function (sec, i) {
+    SECTIONS.forEach(function (sec, i) {
       var card = form.querySelector('.card[data-section="' + i + '"]');
       card.hidden = !sectionActive(sec);
       sec.items.forEach(function (x, j) {
@@ -998,7 +1065,7 @@
       if (it.passInput) row.querySelector(".item-pass").hidden = v !== "Pass";
       if (v) row.classList.remove("missing");
     });
-    $("progressText").textContent = done + " / " + items.length;
+    $("progressText").textContent = currentKind() ? done + " / " + items.length : "";
   }
 
   // ---------- drafts ----------
@@ -1039,6 +1106,8 @@
       populateTypes();
       $("vehicleType").value = data.vehicleType || "";
     }
+    // Inspections started before there was a choice are snow inspections.
+    $("inspectionKind").value = !data ? "" : "inspectionKind" in data ? data.inspectionKind || "" : "snow";
     if (!$("inspector").value) $("inspector").value = load(INSPECTOR_KEY) || "";
   }
 
@@ -1189,11 +1258,13 @@
     var operators = getOperators().filter(function (o) { return o.name; });
     var operatorNames = operators.map(function (o) { return o.name; }).join(", ");
     var appName = CFG.companyName || "Fleet";
+    var typeLabel = kindLabel(currentKind());
     var kind = result === "Rejected" ? "oos" : result === "Conditional Approval" ? "issues" : "ok";
     var flag = result.toUpperCase() +
       (fails.length ? " - " + fails.length + " FAILED ITEM" + (fails.length > 1 ? "S" : "") : "");
 
     var details = [
+      ["Inspection type", typeLabel],
       ["Company", company],
       ["Vehicle type", vehicleTypeText()],
       [unitLabel(), unit],
@@ -1210,10 +1281,10 @@
     });
 
     var sections = [];
-    (CFG.checklist || []).forEach(function (sec, i) {
+    SECTIONS.forEach(function (sec, i) {
       if (!sectionActive(sec)) return;
       sections.push({
-        name: secNumber(sec, i) + ". " + sec.section,
+        name: secNumber(sec) + ". " + sec.section,
         items: sec.items.map(function (x, j) {
           var def = itemDef(x);
           if (!sectionActive(def)) return null;
@@ -1235,7 +1306,7 @@
 
     // Plain-text summary for the email body.
     var L = [];
-    L.push(appName + " - Vehicle Inspection");
+    L.push(appName + " - " + typeLabel);
     L.push("");
     L.push("STATUS: " + flag);
     details.forEach(function (d) { if (d[1]) L.push(d[0] + ": " + d[1]); });
@@ -1260,15 +1331,17 @@
     var licenseCount = operators.reduce(function (n, o) { return n + (photos[o.id] || []).length; }, 0);
     if (operators.length) L.push("License photos: " + licenseCount + " (in PDF)");
     var safeUnit = unit.replace(/[^A-Za-z0-9-]+/g, "-").replace(/^-+|-+$/g, "") || "vehicle";
+    var filename = (currentKind() === "general" ? "General_" : "Snow_") + "Inspection_Unit-" + safeUnit + "_" + isoDate + ".pdf";
 
     return {
-      subject: (editing && editing.reportId ? "[UPDATED] " : "") + "[" + flag + "] Unit " + unit + (company ? " (" + company + ")" : "") + " inspection - " + inspector + " - " + now.toLocaleDateString(),
+      subject: (editing && editing.reportId ? "[UPDATED] " : "") + "[" + flag + "] Unit " + unit + (company ? " (" + company + ")" : "") + " " + typeLabel.toLowerCase() + " - " + inspector + " - " + now.toLocaleDateString(),
       summary: L.join("\n"),
       photoCount: photoCount,
       outOfService: kind !== "ok" || fails.length > 0,
       extraTo: extraEmails(),
-      filename: "Inspection_Unit-" + safeUnit + "_" + isoDate + ".pdf",
+      filename: filename,
       pdfData: {
+        title: typeLabel + " Report",
         company: appName,
         status: { kind: kind, label: flag },
         details: details,
@@ -1277,13 +1350,13 @@
         notes: $("notes").value.trim(),
         notesPhotos: photos.notes || [],
         vehiclePhotos: photos.vehicle || [],
-        policy: CFG.policy || [],
+        policy: kindPolicy(currentKind()),
         inspector: inspector,
         operators: operators.map(function (o) { return { name: o.name, photos: photos[o.id] || [] }; }),
         dateStr: when,
         footer: appName + "  |  Unit " + unit + "  |  " + when,
         headerNote: editing && editing.reportId ? "UPDATED (originally submitted " + formatWhen(editing.originalAt) + ")" : "",
-        filename: "Inspection_Unit-" + safeUnit + "_" + isoDate + ".pdf",
+        filename: filename,
       },
     };
   }
@@ -1444,6 +1517,7 @@
       unit: $("unit").value.trim(),
       company: $("company").value.trim(),
       vehicleType: vehicleTypeText(),
+      inspectionType: kindLabel(currentKind()),
       inspector: $("inspector").value.trim(),
       result: valueOf("result"),
       kind: r.pdfData.status.kind,
@@ -1486,6 +1560,7 @@
   function clearForm(keepView) {
     var inspector = $("inspector").value;
     form.reset();
+    $("inspectionKind").value = "";
     $("inspector").value = inspector || load(INSPECTOR_KEY) || "";
     form.querySelectorAll(".missing, .invalid").forEach(function (el) {
       el.classList.remove("missing");
@@ -1617,10 +1692,12 @@
     loadShared();
   });
   $("sharedRefresh").addEventListener("click", loadShared);
-  ["filterFrom", "filterTo", "filterStatus"].forEach(function (id) {
+  ["filterFrom", "filterTo", "filterKind", "filterStatus"].forEach(function (id) {
     $(id).addEventListener("change", function () { renderReports(); renderShared(); });
   });
   $("exportBtn").addEventListener("click", exportExcel);
+  // Back to the snow / general choice. Answers stay, so picking it again loses nothing.
+  $("kindChange").addEventListener("click", function () { setKind(""); });
   $("saveLaterBtn").addEventListener("click", saveForLater);
   $("editingCancel").addEventListener("click", function () {
     if (confirm("Clear this form and start a new inspection? Changes that weren't saved will be lost.")) clearForm();
